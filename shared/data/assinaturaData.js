@@ -160,7 +160,7 @@ exports.insertAssinatura = function(assinatura) {
 		 ,   id_google 
 		 ,   resposta 
 		 ,   obs 
-		 ,  assi.old_obs  as old_obs
+		 ,   old_obs 
 		 ,   processado 
 		 ,   upload_cliente
 		 ,   user_insert 
