@@ -1,0 +1,35 @@
+//Empresa	Centro	Área de avaliação	Local de negócios	Divisão	Organização vendas	Razão Social	UF	CGC	SIC
+drop table de_para_sim;
+CREATE TABLE de_para_sim (
+    empresa      int4 not null,
+    centro       varchar(04) not null,
+    area         varchar(04) not null,
+    local        varchar(04) not null,
+    divisao      varchar(04) not null,
+    organizacao  varchar(10)  default '',
+    razao        varchar(70),
+    uf           char(02),
+    cgc          varchar(25),
+    sic          int4,
+    PRIMARY KEY(empresa,divisao) 
+);
+go
+
+COPY de_para_sim
+FROM 'C:/Conciliador/De_Para_Sim/de_para_sim.CSV'
+DELIMITER ';'
+CSV HEADER;
+
+SELECT empresa,divisao FROM de_para_sim
+
+SELECT DISTINCT DET.COD_EMPRESA,DET.CP,dp.empresa,dp.divisao   
+FROM CONTRATOS_DET DET 
+left join de_para_sim dp on dp.empresa = det.cod_empresa and det.cp = dp.divisao
+WHERE DET.COD_EMPRESA = '1001' or DET.COD_EMPRESA = '1002' or DET.COD_EMPRESA = '1003' or DET.COD_EMPRESA = '1004' and (det.competencia between '2019-09-01' and '2024-04-30')
+ORDER BY DET.COD_EMPRESA,DET.CP
+
+select * from de_para_sim
+
+select det.* 
+from   contratos_det det 
+WHERE DET.COD_EMPRESA = '1001' or DET.COD_EMPRESA = '1002' or DET.COD_EMPRESA = '1003' or DET.COD_EMPRESA = '1004' and (det.competencia between '2019-09-01' and '2024-04-30')

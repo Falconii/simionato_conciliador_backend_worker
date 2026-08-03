@@ -1,0 +1,36 @@
+{
+  "name": "conciliador-worker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "nodemon index.js"
+  },
+  "author": "Marcos Renato Falconi",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "bcryptjs": "^3.0.2",
+    "compressorjs": "^1.2.1",
+    "cors": "^2.8.5",
+    "csv": "^6.3.5",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
+    "express": "^5.1.0",
+    "googleapis": "^164.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "nodemailer": "^6.9.1",
+    "pg": "^8.16.3",
+    "pg-promise": "^11.15.0",
+    "resend": "^6.12.4",
+    "sharp": "^0.34.4",
+    "ws": "^8.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": "22.21.1"
+  }
+}

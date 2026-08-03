@@ -1,0 +1,12 @@
+/node_modules
+/keys/*.json
+/keys_simionato/*.json
+/rel_excel/*.*
+/docs/*.*
+conexoes.json
+conexoes_local.json
+conexoes_nuvem.json
+sistema_email.json
+frase_access.txt
+frase_refresh.txt
+*.zip

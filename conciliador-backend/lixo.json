@@ -1,0 +1,8 @@
+{
+  "\r\nselect * from auditorias a where id_contrato = 3421": [
+    {
+      "histo_antes": "[{\"id_empresa\":1,\"id_cab\":3421,\"id_auditor\":43,\"id_google\":6108,\"resposta\":\"S\",\"obs\":\"VARIOS ACORDOS\",\"processado\":\"2026-08-04T15:13:18\",\"user_insert\":43,\"user_update\":0,\"id_sim\":0,\"id_email\":0}]",
+      "histo_atual": "[{\"id_empresa\":1,\"id_cab\":3421,\"id_auditor\":43,\"id_google\":6108,\"resposta\":\"S\",\"obs\":\"\",\"processado\":\"2026-04-29T00:00:00\",\"user_insert\":43,\"user_update\":43,\"id_sim\":0,\"id_email\":0}]"
+    }
+  ]
+}
