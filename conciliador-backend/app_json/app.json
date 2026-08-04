@@ -4928,6 +4928,226 @@
                         }
                     ],
                     "tablespace": "Producao"
+                },
+                {
+                    "name": "tarefas",
+                    "fields": [
+                        {
+                            "name": "id_empresa",
+                            "type": "int4",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "N",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "id",
+                            "type": "serial",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "N",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "id_usuario",
+                            "type": "int4",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "N",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "id_file",
+                            "type": "varchar",
+                            "length": 255,
+                            "precision": 0,
+                            "nulo": "N",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "folder_id",
+                            "type": "char",
+                            "length": 255,
+                            "precision": 0,
+                            "nulo": "N",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "name_file",
+                            "type": "varchar",
+                            "length": 255,
+                            "precision": 0,
+                            "nulo": "N",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "sigla",
+                            "type": "char",
+                            "length": 20,
+                            "precision": 0,
+                            "nulo": "N",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "data_solicitacao",
+                            "type": "timestamp",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "N",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "data_conclusao",
+                            "type": "timestamp",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "N",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "parametros",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "N",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "user_insert",
+                            "type": "int4",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "N",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "user_update",
+                            "type": "int4",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "N",
+                            "padrao": "",
+                            "validacao": []
+                        }
+                    ],
+                    "inner_join": [],
+                    "left_join": [],
+                    "primaryKey": [
+                        {
+                            "key": "id_empresa"
+                        },
+                        {
+                            "key": "name_file"
+                        }
+                    ],
+                    "variables": {
+                        "getone": "tarefa",
+                        "getall": "tarefas",
+                        "alias": "tarefa"
+                    },
+                    "where": {
+                        "parametro_01": [
+                            {
+                                "name": "id_empresa",
+                                "filtro": "S",
+                                "atividador": " !== 0 ",
+                                "tipo": "number",
+                                "padrao": 0
+                            },
+                            {
+                                "name": "id",
+                                "filtro": "S",
+                                "atividador": " !== 0 ",
+                                "tipo": "number",
+                                "padrao": 0
+                            },
+                            {
+                                "name": "id_usuario",
+                                "filtro": "S",
+                                "atividador": " !== 0 ",
+                                "tipo": "number",
+                                "padrao": 0
+                            },
+                            {
+                                "name": "sigla",
+                                "filtro": "S",
+                                "atividador": " !== 0 ",
+                                "tipo": "string",
+                                "padrao": 0
+                            },
+                            {
+                                "name": "name_file",
+                                "filtro": "S",
+                                "atividador": " !== '' ",
+                                "tipo": "string",
+                                "padrao": ""
+                            },
+                            {
+                                "name": "pagina",
+                                "filtro": "N",
+                                "atividador": "",
+                                "tipo": "number",
+                                "padrao": 0
+                            },
+                            {
+                                "name": "tamPagina",
+                                "filtro": "N",
+                                "atividador": "",
+                                "tipo": "number",
+                                "padrao": 50
+                            },
+                            {
+                                "name": "contador",
+                                "filtro": "N",
+                                "atividador": "",
+                                "tipo": "string",
+                                "padrao": "N"
+                            },
+                            {
+                                "name": "orderby",
+                                "filtro": "N",
+                                "atividador": "",
+                                "tipo": "string",
+                                "padrao": ""
+                            },
+                            {
+                                "name": "sharp",
+                                "filtro": "N",
+                                "atividador": "",
+                                "tipo": "boolean",
+                                "padrao": "false"
+                            }
+                        ]
+                    },
+                    "orderby": [
+                        {
+                            "label": "",
+                            "comparativo": " != '' ",
+                            "key": "tarefa.id_empresa,tarefa.name_file"
+                        },
+                        {
+                            "label": "000001",
+                            "comparativo": " != '' ",
+                            "key": "tarefa.id_empresa,tarefa.name_file"
+                        },
+                        {
+                            "label": "000002",
+                            "comparativo": " != '' ",
+                            "key": "tarefa.id_empresa,tarefa.id_usuario,tarefa.name_file"
+                        }
+                    ],
+                    "tablespace": "Producao"
                 }
 
             ],

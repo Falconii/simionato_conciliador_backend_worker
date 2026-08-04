@@ -92,7 +92,7 @@ app.use("/api/pst_anexo", require("./route/pst_anexoRoute.js"));
 app.use("/api/pst_email", require("./route/pst_emailRoute.js"));
 app.use("/api/relatorio/complementar", require("./route/complementar/relatorioRoute.js"));
 app.use("/api/sim_acordo", require("./route/sim_acordoRoute.js"));
-
+app.use("/api/tarefa", require("./route/tarefaRoute.js"));
 
 app.listen(PORT, () => {
   console.log(`Servidor No Ar. Porta ${PORT}`);
