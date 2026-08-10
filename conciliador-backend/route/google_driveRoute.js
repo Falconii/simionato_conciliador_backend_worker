@@ -18,42 +18,18 @@ router.use(autenticarToken);
 
 router.post("/download", async function (req, res) {
   try {
-    // Validação
-    const dados = {
-      id_empresa: req.id_empresa,
-      id_usuario: req.id_usuario,
-      id_doc: req.body.id_doc,
-    };
-
-    const camposObrigatorios = ["id_empresa", "id_usuario", "id_doc"];
-    const camposAusentes = camposObrigatorios.filter((campo) => !dados[campo]);
-
-    if (camposAusentes.length > 0) {
-      return response.validationError(res, camposAusentes);
-    }
-
     const id_empresa = req.id_empresa;
     const id_usuario = req.id_usuario;
     const id_doc = req.body.id_doc;
 
-    console.log("Dados Recebidos:", { id_empresa, id_usuario, id_doc });
-
     const docModel = await doc_gdriveSrv.getDoc_Gdrive(id_empresa, id_doc);
 
-    console.log("Documento Encontrado:", docModel);
-
     if (!docModel) {
-      return response.notFound(res, "DOCUMENTO", {
-        "doc id": id_doc,
-        doc: docModel,
-      });
+      return response.notFound(res, "DOCUMENTO", { id_doc });
     }
 
     if (docModel.status_upload !== "1") {
-      return response.error(res, "Documento Não Fez Upload", 401, {
-        "doc id": id_doc,
-        doc: docModel,
-      });
+      return response.error(res, "Documento Não Fez Upload", 401);
     }
 
     // Autenticação Google
@@ -63,38 +39,56 @@ router.post("/download", async function (req, res) {
 
     const fileId = docModel.id_file;
 
-    // Obtenho o mimeType
+    // METADADOS CORRETOS
     const fileMeta = await driveService.files.get({
       fileId,
-      fields: "mimeType, name",
+      fields: "size, mimeType, name",
     });
 
-    const mimeType = fileMeta.data.mimeType;
-    const fileName = fileMeta.data.name;
+    const { size, mimeType, name } = fileMeta.data; // <-- CORRETO
 
+
+    // Arquivo corrompido no Drive
+    if (!size || size === 0) {
+      return res.status(400).json({
+        error: "EMPTY_FILE",
+        message: "Arquivo inválido ou corrompido no Google Drive."
+      });
+    }
+
+    // Stream do arquivo
     const driveResponse = await driveService.files.get(
       { fileId, alt: "media" },
-      { responseType: "stream" },
+      { responseType: "stream" }
     );
-    const safeFileName = encodeURIComponent(docModel.file_name.trim());
+
+    driveResponse.data.on("error", err => {
+      console.error("Erro ao ler arquivo do Drive:", err);
+      return res.status(400).json({
+        error: "INVALID_FILE",
+        message: "Falha ao carregar o arquivo no Google Drive."
+      });
+    });
+
+    // Headers corretos
     res.setHeader("Content-Type", mimeType);
+
+    const safeFileName = encodeURIComponent(name.trim());
+
     res.setHeader(
       "Content-Disposition",
-      `inline; filename="${safeFileName}"`,
+      `attachment; filename*=UTF-8''${safeFileName}`
     );
 
     driveResponse.data.pipe(res);
+
   } catch (err) {
     console.log(err);
-    if (err.name == "MyExceptionDB") {
-      res.status(409).json(err);
-    } else {
-      res.status(500).json({
-        erro: "BACK-END",
-        tabela: "Importacao",
-        message: err.message,
-      });
-    }
+    res.status(500).json({
+      erro: "BACK-END",
+      tabela: "Importacao",
+      message: err.message,
+    });
   }
 });
 
