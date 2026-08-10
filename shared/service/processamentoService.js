@@ -431,7 +431,7 @@ exports.startProcessamentoTarefas = function (intervaloSegundos = 5) {
 
   scheduler.addSimpleIntervalJob(job);
 
-  console.log(`Job de processamento iniciado (intervalo: ${intervaloSegundos}s)`);
+  //console.log(`Job de processamento iniciado (intervalo: ${intervaloSegundos}s)`);
 };
 
 //03

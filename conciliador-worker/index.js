@@ -6,7 +6,7 @@ const processamentoSrv = require('../shared/service/processamentoService');
 
 const iniciar = async function () {
    
- processamentoSrv.startProcessamentoTarefas(5); // Inicia o processamento a cada 5 segundos
+ processamentoSrv.startProcessamentoTarefas(10); // Inicia o processamento a cada 5 segundos
 
 };
 

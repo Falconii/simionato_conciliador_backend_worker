@@ -86,6 +86,8 @@ router.post("/relatoriocontratos", async function (req, res) {
           "user_update": 0
     };
 
+    console.log("Indo cadastrar tarefa", tarefa)
+    
     const tarefaCadastrada = await tarefaSrv.getTarefa(dados.id_empresa, tarefa.name_file);
 
     if (tarefaCadastrada) {

@@ -196,7 +196,7 @@ router.post("/cadastrartarefa", async function (req, res) {
       params: req.body.params
     };
 
-    console.log("cadastrartarefar:",dados);
+    console.log("cadastrar tarefar:",dados); 
 
     /* const par = JSON.parse(dados.params);
 
