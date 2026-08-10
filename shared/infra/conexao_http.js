@@ -23,7 +23,7 @@ if (process.env.WORKER_URL) {
   console.log("URL BACKEND Para Parametro : BACKEND_URL");
   console.log("URL BACKEND:", workerURL);
 } else {
-  const url_file = JSON.parse(fs.readFileSync("./worker_url.json", "utf8"));
+  const url_file = JSON.parse(fs.readFileSync("../shared/worker_url.json", "utf8"));
   console.log("==>",url_file);
   workerURL = url_file.worker_url;
   console.log("URL BACKEND Para Local!! - worker_url.json", workerURL);

@@ -25,7 +25,8 @@
     "pg-promise": "^11.15.0",
     "resend": "^6.12.4",
     "sharp": "^0.34.4",
-    "ws": "^8.18.2"
+    "ws": "^8.18.2",
+    "toad-scheduler": "^3.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

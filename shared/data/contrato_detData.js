@@ -100,9 +100,14 @@ exports.getContrato_Det = function(id) {
 /* CRUD GET ALL*/
 exports.getContratos_Det = function(params) {
     if (params) {
+
+        console.log("params data ==> ", params);
         where = "";
         orderby = "";
         paginacao = "";
+
+        console.log("params ==> ", params);
+        console.log("params.competencia ==> ", params.competencia);
 
         if (params.orderby == "")
             orderby = "contrato_det.id_empresa,contrato_det.competencia";
@@ -116,126 +121,134 @@ exports.getContratos_Det = function(params) {
             if (where != "") where += " and ";
             where += `contrato_det.id_empresa = ${params.id_empresa} `;
         }
-        if (params.id !== 0) {
-            if (where != "") where += " and ";
-            where += `contrato_det.id = ${params.id} `;
+        try {
+                if (params.id !== 0) {
+                    if (where != "") where += " and ";
+                    where += `contrato_det.id = ${params.id} `;
+                }
+                if (params.competencia.trim() !== "") {
+                    if (where != "") where += " and ";
+                    where += `to_char(contrato_det.competencia, 'MM/YYYY') = '${params.competencia}' `;
+                }
+                if (params.cod_empresa !== 0) {
+                    if (where != "") where += " and ";
+                    where += `contrato_det.cod_empresa = ${params.cod_empresa} `;
+                }
+                if (params.cod_cliente.trim() !== "") {
+                    if (where != "") where += " and ";
+                    if (params.sharp) {
+                        where += `contrato_det.cod_cliente = '${params.cod_cliente}' `;
+                    } else {
+                        where += `contrato_det.cod_cliente like '%${params.cod_cliente.trim()}%' `;
+                    }
+                }
+                if (params.cliente.trim() !== "") {
+                    if (where != "") where += " and ";
+                    if (params.sharp) {
+                        where += `contrato_det.cliente = '${params.cliente}' `;
+                    } else {
+                        where += `contrato_det.cliente like '%${params.cliente.trim()}%' `;
+                    }
+                }
+                if (params.cnpj_cliente.trim() !== "") {
+                    if (where != "") where += " and ";
+                    if (params.sharp) {
+                        where += `contrato_det.cnpj_cliente = '${params.cnpj_cliente}' `;
+                    } else {
+                        where += `contrato_det.cnpj_cliente like '%${params.cnpj_cliente.trim()}%' `;
+                    }
+                }
+                if (params.doc_conciliador.trim() !== "") {
+                    if (where != "") where += " and ";
+                    if (params.sharp) {
+                        where += `contrato_det.doc_conciliador = '${params.doc_conciliador}' `;
+                    } else {
+                        where += `contrato_det.doc_conciliador like '%${params.doc_conciliador.trim()}%' `;
+                    }
+                }
+                if (params.proposta.trim() !== "") {
+                    if (where != "") where += " and ";
+                    if (params.sharp) {
+                        where += `contrato_det.proposta = '${params.proposta}' `;
+                    } else {
+                        where += `contrato_det.proposta like '%${params.proposta.trim()}%' `;
+                    }
+                }
+                if (params.acao.trim() !== "") {
+                    if (where != "") where += " and ";
+                    if (params.sharp) {
+                        where += `contrato_det.acao = '${params.acao}' `;
+                    } else {
+                        where += `contrato_det.acao like '%${params.acao.trim()}%' `;
+                    }
+                }
+                if (params.tipo_de_verba.trim() !== "") {
+                    if (where != "") where += " and ";
+                    if (params.sharp) {
+                        where += `contrato_det.tipo_de_verba = '${params.tipo_de_verba}' `;
+                    } else {
+                        where += `contrato_det.tipo_de_verba like '%${params.tipo_de_verba.trim()}%' `;
+                    }
+                }
+                if (params.tipo_de_pagamento.trim() !== "") {
+                    if (where != "") where += " and ";
+                    if (params.sharp) {
+                        where += `contrato_det.tipo_de_pagamento = '${params.tipo_de_pagamento}' `;
+                    } else {
+                        where += `contrato_det.tipo_de_pagamento like '%${params.tipo_de_pagamento.trim()}%' `;
+                    }
+                }
+                if (params.status.trim() !== "") {
+                    if (where != "") where += " and ";
+                    if (params.sharp) {
+                        where += `contrato_det.status = '${params.status}' `;
+                    } else {
+                        where += `contrato_det.status like '%${params.status.trim()}%' `;
+                    }
+                }
+                if (params.status_assinatura.trim() !== "") {
+
+                    if (where != "") where += " and ";
+                    
+                    if (params.status_assinatura == "S" || params.status_assinatura == "N") {
+                        where += `contrato_det.status_assinatura = '${params.status_assinatura}' `;
+                    }
+                    if (params.status_assinatura == "V") {
+                        where += `( contrato_det.status_assinatura = 'S' or contrato_det.status_assinatura = 'N')  `;
+                    }
+                    if (params.status_assinatura == "X") {
+                        where += `contrato_det.status_assinatura = ''   `;
+                    }
+                }
+                if (params.status_arquivos.trim() !== "") {
+                    if (where != "") where += " and ";
+                    if (params.sharp) {
+                        where += `contrato_det.status_arquivos = '${params.status_arquivos}' `;
+                    } else {
+                        where += `contrato_det.status_arquivos like '%${params.status_arquivos.trim()}%' `;
+                    }
+                }
+                if (params.id_paf !== 0) {
+                    if (where != "") where += " and ";
+                    where += `contrato_det.id_cab = ${params.id_paf} `;
+                }
+                if (params.id_sim !== 0) {
+                    if (where != "") where += " and ";
+                    where += `contrato_det.id_sim = ${params.id_sim} `;
+                }
+                if (params.id_email !== 0) {
+                    if (where != "") where += " and ";
+                    where += `contrato_det.id_email = ${params.id_email} `;
+                }
+                if (params.id_arker !== 0) {
+                    if (where != "") where += " and ";
+                    where += `contrato_det.id_arker = ${params.id_arker} `;
+                }
+         } catch (err) {
+                console.error("Erro ao buscar contratos:", err);
+                throw err;
         }
-        if (params.competencia.trim() !== "") {
-            if (where != "") where += " and ";
-            where += `to_char(contrato_det.competencia, 'MM/YYYY') = '${params.competencia}' `;
-        }
-        if (params.cod_empresa !== 0) {
-            if (where != "") where += " and ";
-            where += `contrato_det.cod_empresa = ${params.cod_empresa} `;
-        }
-        if (params.cod_cliente.trim() !== "") {
-            if (where != "") where += " and ";
-            if (params.sharp) {
-                where += `contrato_det.cod_cliente = '${params.cod_cliente}' `;
-            } else {
-                where += `contrato_det.cod_cliente like '%${params.cod_cliente.trim()}%' `;
-            }
-        }
-        if (params.cliente.trim() !== "") {
-            if (where != "") where += " and ";
-            if (params.sharp) {
-                where += `contrato_det.cliente = '${params.cliente}' `;
-            } else {
-                where += `contrato_det.cliente like '%${params.cliente.trim()}%' `;
-            }
-        }
-        if (params.cnpj_cliente.trim() !== "") {
-            if (where != "") where += " and ";
-            if (params.sharp) {
-                where += `contrato_det.cnpj_cliente = '${params.cnpj_cliente}' `;
-            } else {
-                where += `contrato_det.cnpj_cliente like '%${params.cnpj_cliente.trim()}%' `;
-            }
-        }
-        if (params.doc_conciliador.trim() !== "") {
-            if (where != "") where += " and ";
-            if (params.sharp) {
-                where += `contrato_det.doc_conciliador = '${params.doc_conciliador}' `;
-            } else {
-                where += `contrato_det.doc_conciliador like '%${params.doc_conciliador.trim()}%' `;
-            }
-        }
-        if (params.proposta.trim() !== "") {
-            if (where != "") where += " and ";
-            if (params.sharp) {
-                where += `contrato_det.proposta = '${params.proposta}' `;
-            } else {
-                where += `contrato_det.proposta like '%${params.proposta.trim()}%' `;
-            }
-        }
-        if (params.acao.trim() !== "") {
-            if (where != "") where += " and ";
-            if (params.sharp) {
-                where += `contrato_det.acao = '${params.acao}' `;
-            } else {
-                where += `contrato_det.acao like '%${params.acao.trim()}%' `;
-            }
-        }
-        if (params.tipo_de_verba.trim() !== "") {
-            if (where != "") where += " and ";
-            if (params.sharp) {
-                where += `contrato_det.tipo_de_verba = '${params.tipo_de_verba}' `;
-            } else {
-                where += `contrato_det.tipo_de_verba like '%${params.tipo_de_verba.trim()}%' `;
-            }
-        }
-        if (params.tipo_de_pagamento.trim() !== "") {
-            if (where != "") where += " and ";
-            if (params.sharp) {
-                where += `contrato_det.tipo_de_pagamento = '${params.tipo_de_pagamento}' `;
-            } else {
-                where += `contrato_det.tipo_de_pagamento like '%${params.tipo_de_pagamento.trim()}%' `;
-            }
-        }
-        if (params.status.trim() !== "") {
-            if (where != "") where += " and ";
-            if (params.sharp) {
-                where += `contrato_det.status = '${params.status}' `;
-            } else {
-                where += `contrato_det.status like '%${params.status.trim()}%' `;
-            }
-        }
-        if (params.status_assinatura.trim() !== "") {
-            if (where != "") where += " and ";
-            if (params.assinatura == "S" || params.assinatura == "N") {
-                where += `contrato_det.status_assinatura = '${params.status_assinatura}' `;
-            }
-            if (params.assinatura == "V") {
-                where += `contrato_det.status_assinatura = 'S' || contrato_det.status_assinatura = 'N'  `;
-            }
-            if (params.assinatura == "X") {
-                where += `contrato_det.status_assinatura = ''   `;
-            }
-        }
-        if (params.status_arquivos.trim() !== "") {
-            if (where != "") where += " and ";
-            if (params.sharp) {
-                where += `contrato_det.status_arquivos = '${params.status_arquivos}' `;
-            } else {
-                where += `contrato_det.status_arquivos like '%${params.status_arquivos.trim()}%' `;
-            }
-        }
-        if (params.id_paf !== 0) {
-            if (where != "") where += " and ";
-            where += `contrato_det.id_cab = ${params.id_paf} `;
-        }
-        if (params.id_sim !== 0) {
-            if (where != "") where += " and ";
-            where += `contrato_det.id_sim = ${params.id_sim} `;
-        }
-        if (params.id_email !== 0) {
-            if (where != "") where += " and ";
-            where += `contrato_det.id_email = ${params.id_email} `;
-        }
-        if (params.id_arker !== 0) {
-            if (where != "") where += " and ";
-            where += `contrato_det.id_arker = ${params.id_arker} `;
-        }
+        console.log("where ==> ", where);
         if (where != "") where = " where " + where;
         if (params.pagina != 0) {
             paginacao = `limit ${params.tamPagina} offset((${params.pagina} -1) * ${params.tamPagina})`;
@@ -303,6 +316,7 @@ exports.getContratos_Det = function(params) {
                   left join assinaturas    ass_paf on ass_paf.id_empresa    = paf.id_empresa            and ass_paf.id_cab = paf.id
                   left join assinaturas    ass_sim on ass_sim.id_empresa    = ass_sim.id_empresa            and ass_sim.id_sim = sim.id
 			${where} 			${orderby} ${paginacao} `;
+            console.log("getContratos_Det", strSql);
             if (params.saida && params.saida == 3) 
                 {
                   return strSql;

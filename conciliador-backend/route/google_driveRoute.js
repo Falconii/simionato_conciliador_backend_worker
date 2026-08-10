@@ -76,11 +76,11 @@ router.post("/download", async function (req, res) {
       { fileId, alt: "media" },
       { responseType: "stream" },
     );
-
+    const safeFileName = encodeURIComponent(docModel.file_name.trim());
     res.setHeader("Content-Type", mimeType);
     res.setHeader(
       "Content-Disposition",
-      `inline; filename="${docModel.file_name.trim()}"`,
+      `inline; filename="${safeFileName}"`,
     );
 
     driveResponse.data.pipe(res);

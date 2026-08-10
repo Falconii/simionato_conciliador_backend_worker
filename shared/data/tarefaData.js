@@ -2,6 +2,8 @@
 const db = require('../infra/database');
 
 
+
+
 /* GET CAMPOS */
 exports.getCampos = function(Tarefa){
 return [ 
@@ -15,27 +17,30 @@ return [
 			Tarefa.data_solicitacao, 
 			Tarefa.data_conclusao, 
 			Tarefa.parametros, 
+			Tarefa.status,
 			Tarefa.user_insert, 
 			Tarefa.user_update, 
  ]; 
 }; 
 /* CRUD GET */
 exports.getTarefa = function(id_empresa,name_file){
-	strSql = ` select   
-			   tarefa.id_empresa as  id_empresa  
-			,  tarefa.id as  id  
-			,  tarefa.id_usuario as  id_usuario  
-			,  tarefa.id_file as  id_file  
-			,  tarefa.folder_id as  folder_id  
-			,  tarefa.name_file as  name_file  
-			,  tarefa.sigla as  sigla  
-			, to_char(tarefa.data_solicitacao, 'YYYY-MM-DD HH24:MI GMT-0300') as data_solicitacao  
-			, to_char(tarefa.data_conclusao, 'YYYY-MM-DD HH24:MI GMT-0300') as data_conclusao  
-			,  tarefa.parametros as  parametros  
-			,  tarefa.user_insert as  user_insert  
-			,  tarefa.user_update as  user_update    
- 			FROM tarefas tarefa 	     
+	strSql =  `SELECT
+				tarefa.id_empresa      AS id_empresa,
+				tarefa.id              AS id,
+				tarefa.id_usuario      AS id_usuario,
+				tarefa.id_file         AS id_file,
+				tarefa.folder_id       AS folder_id,
+				tarefa.name_file       AS name_file,
+				tarefa.sigla           AS sigla,
+			    tarefa.data_solicitacao as data_solicitacao  ,
+			    tarefa.data_conclusao as data_conclusao , 
+				tarefa.parametros      AS parametros,
+				tarefa.status          AS status,
+				tarefa.user_insert     AS user_insert,
+				tarefa.user_update     AS user_update
+			FROM tarefas tarefa
 			 where tarefa.id_empresa = ${id_empresa} and  tarefa.name_file = '${name_file}'  `;
+			 console.log(strSql);
 	return  db.oneOrNone(strSql);
 }
 /* CRUD GET ALL*/
@@ -80,6 +85,10 @@ if (params) {
 			where += `tarefa.name_file like '%${params.name_file.trim()}%' `;
 		}
 	}
+	if(params.status.trim()  !== '' ){
+		if (where != "") where += " and ";
+			 where +=  `tarefa.status = '${params.status}' `;
+	}
 	if (where != "") where = " where " + where;
 	 if (params.pagina != 0) {
 		paginacao = `limit ${params.tamPagina} offset((${params.pagina} -1) * ${params.tamPagina})`;
@@ -90,20 +99,21 @@ if (params) {
 				  ${ where} `;
 		return db.one(sqlStr);
 	}  else {
-		strSql = `select   
-			   tarefa.id_empresa as  id_empresa  
-			,  tarefa.id as  id  
-			,  tarefa.id_usuario as  id_usuario  
-			,  tarefa.id_file as  id_file  
-			,  tarefa.folder_id as  folder_id  
-			,  tarefa.name_file as  name_file  
-			,  tarefa.sigla as  sigla  
-			, to_char(tarefa.data_solicitacao, 'YYYY-MM-DD HH24:MI GMT-0300') as data_solicitacao  
-			, to_char(tarefa.data_conclusao, 'YYYY-MM-DD HH24:MI GMT-0300') as data_conclusao  
-			,  tarefa.parametros as  parametros  
-			,  tarefa.user_insert as  user_insert  
-			,  tarefa.user_update as  user_update     
-			FROM tarefas tarefa      
+		strSql = `SELECT
+				tarefa.id_empresa      AS id_empresa,
+				tarefa.id              AS id,
+				tarefa.id_usuario      AS id_usuario,
+				tarefa.id_file         AS id_file,
+				tarefa.folder_id       AS folder_id,
+				tarefa.name_file       AS name_file,
+				tarefa.sigla           AS sigla,
+			    tarefa.data_solicitacao as data_solicitacao , 
+			    tarefa.data_conclusao as data_conclusao,  
+				tarefa.parametros      AS parametros,
+				tarefa.status          AS status
+				tarefa.user_insert     AS user_insert,
+				tarefa.user_update     AS user_update,
+			FROM tarefas tarefa
 			${where} 			${ orderby} ${ paginacao} `;
 			return  db.manyOrNone(strSql);
 		}	}  else {
@@ -115,8 +125,8 @@ if (params) {
 			,  tarefa.folder_id as  folder_id  
 			,  tarefa.name_file as  name_file  
 			,  tarefa.sigla as  sigla  
-			, to_char(tarefa.data_solicitacao, 'YYYY-MM-DD HH24:MI GMT-0300') as data_solicitacao  
-			, to_char(tarefa.data_conclusao, 'YYYY-MM-DD HH24:MI GMT-0300') as data_conclusao  
+			,  tarefa.data_solicitacao as data_solicitacao  
+			,  tarefa.data_conclusao as data_conclusao  
 			,  tarefa.parametros as  parametros  
 			,  tarefa.user_insert as  user_insert  
 			,  tarefa.user_update as  user_update    
@@ -126,33 +136,38 @@ if (params) {
 }
 /* CRUD - INSERT */
  exports.insertTarefa = function(tarefa){
-	strSql = `insert into tarefas (
-		     id_empresa 
-		 ,   id_usuario 
-		 ,   id_file 
-		 ,   folder_id 
-		 ,   name_file 
-		 ,   sigla 
-		 ,   data_solicitacao 
-		 ,   data_conclusao 
-		 ,   parametros 
-		 ,   user_insert 
-		 ,   user_update 
-		 ) 
-		 values(
-		     ${tarefa.id_empresa} 
-		 ,   ${tarefa.id_usuario} 
-		 ,   '${tarefa.id_file}' 
-		 ,   '${tarefa.folder_id}' 
-		 ,   '${tarefa.name_file}' 
-		 ,   '${tarefa.sigla}' 
-		 ,   '${tarefa.data_solicitacao.replace('GMT-0300', '').replace('T', ' ').replace('Z', '')}' 
-		 ,   '${tarefa.data_conclusao.replace('GMT-0300', '').replace('T', ' ').replace('Z', '')}' 
-		 ,   '${tarefa.parametros}' 
-		 ,   ${tarefa.user_insert} 
-		 ,   ${tarefa.user_update} 
-		 ) 
- returning * `;
+	const strSql = `
+	INSERT INTO tarefas (
+		id_empresa,
+		id_usuario,
+		id_file,
+		folder_id,
+		name_file,
+		sigla,
+		data_solicitacao,
+		data_conclusao,
+		parametros,
+		status,
+		user_insert,
+		user_update
+	)
+	VALUES (
+		${tarefa.id_empresa},
+		${tarefa.id_usuario},
+		'${tarefa.id_file}',
+		'${tarefa.folder_id}',
+		'${tarefa.name_file}',
+		'${tarefa.sigla}',
+		'${tarefa.data_solicitacao}', 
+		'${tarefa.data_conclusao}',
+		'${tarefa.parametros}',
+		'${tarefa.status}',
+		${tarefa.user_insert},
+		${tarefa.user_update}
+	)
+	RETURNING *;
+	`;
+
 	return db.oneOrNone(strSql);
 };
 /* CRUD - UPDATE */
@@ -163,9 +178,10 @@ if (params) {
  		 ,   id_file = '${tarefa.id_file}' 
  		 ,   folder_id = '${tarefa.folder_id}' 
  		 ,   sigla = '${tarefa.sigla}' 
- 		 ,   data_solicitacao = '${tarefa.data_solicitacao.replace('GMT-0300', '').replace('T', ' ').replace('Z', '')}' 
- 		 ,   data_conclusao = '${tarefa.data_conclusao.replace('GMT-0300', '').replace('T', ' ').replace('Z', '')}' 
+ 		 ,   data_solicitacao = '${tarefa.data_solicitacao}' 
+ 		 ,   data_conclusao = '${tarefa.data_conclusao}' 
  		 ,   parametros = '${tarefa.parametros}' 
+ 		 ,   status = '${tarefa.status}' 
  		 ,   user_insert = ${tarefa.user_insert} 
  		 ,   user_update = ${tarefa.user_update} 
  		 where id_empresa = ${tarefa.id_empresa} and  name_file = '${tarefa.name_file}'  returning * `;

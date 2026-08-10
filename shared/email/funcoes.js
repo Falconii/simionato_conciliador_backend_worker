@@ -621,40 +621,65 @@ exports.enviarEmailRelatorioEvento = async function (usuario, owner, arquivo) {
 
   const destinatario = usuario.email;
 
+  console.log("enviarEmailRelatorioEvento", destinatario, owner, arquivo);
+
   // Lê o arquivo e converte para base64
   const arquivoBase64 = fs.readFileSync(arquivo).toString('base64');
 
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
-<head>  
+<head>
   <meta charset="UTF-8" />
-  <title>Relatorio De Evento</title>
-  <style>     
-    body {        
-      font-family: Arial, Helvetica, sans-serif;
-      background-color: #f4f4f4;
-      margin: 0;        
-      padding: 0;    
-    }    
-    .container {      
-      max-width: 640px;      
-      margin: 20px auto;      
-      background-color: #ffffff;    
-      border-radius: 6px;      
-      border: 1px solid #e0e0e0;      
-      padding: 20px 24px;
-    }
-  </style>
+  <title>Relatório de Evento</title>
 </head>
-<body>  
-  <div class="container">    
-    <h1>Relatório do Evento</h1>    
-    <p>${owner}</p>  
-    <p>Segue em anexo o relatório solicitado.</p>
-    <p>Atenciosamente,<br>Equipe de Suporte</p>  
-  </div>
+
+<body style="margin:0; padding:0; background-color:#f4f4f4; font-family:Arial, Helvetica, sans-serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f4f4; padding:32px 0;">
+    <tr>
+      <td align="center">
+
+        <table width="640" cellpadding="0" cellspacing="0" border="0"
+               style="background-color:#ffffff; border:1px solid #e0e0e0; padding:32px;">
+
+          <!-- Título -->
+          <tr>
+            <td style="font-size:28px; font-weight:bold; color:#222222; letter-spacing:-0.5px; padding-bottom:20px;">
+              Relatório do Evento
+            </td>
+          </tr>
+
+          <!-- Subtítulo / Identificação -->
+          <tr>
+            <td style="font-size:18px; color:#555555; font-weight:500; padding-bottom:20px;">
+              ${owner}
+            </td>
+          </tr>
+
+          <!-- Corpo -->
+          <tr>
+            <td style="font-size:16px; line-height:1.6; color:#333333; padding-bottom:20px;">
+              Segue em anexo o relatório solicitado.
+            </td>
+          </tr>
+
+          <!-- Assinatura -->
+          <tr>
+            <td style="font-size:16px; line-height:1.6; color:#333333;">
+              Atenciosamente,<br>
+              <span style="font-weight:600;">Equipe de Suporte</span>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
 </body>
-</html>`;
+</html>
+`;
 
   try {
 

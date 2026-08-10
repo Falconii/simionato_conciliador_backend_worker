@@ -1,8 +1,6 @@
 
 
-const {axiosBackEnd, backendURL} = require('../infra/conexao_http');
-
-
+const {axiosBackEnd, backendURL} = require('../../shared/infra/conexao_http');
 async function sendEmailTask() {
   console.log("Iniciando tarefa de envio de email...");
   // Simula tarefa demorada

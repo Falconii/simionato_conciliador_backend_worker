@@ -460,6 +460,28 @@ CREATE TABLE Public.arquivos_google (
  WITHOUT OIDS 
  TABLESPACE "Producao" 
  GO 
+ /* TABELA tarefas  */
+DROP TABLE IF EXISTS tarefas;
+CREATE TABLE Public.tarefas (
+		id_empresa int4  NOT NULL  , 
+		id serial  NOT NULL  , 
+		id_usuario int4  NOT NULL  , 
+		id_file varchar(255)  NOT NULL  , 
+		folder_id varchar(255)  NOT NULL  , 
+		name_file varchar(255)  NOT NULL  , 
+		sigla varchar(20)  NOT NULL  , 
+		data_solicitacao VARCHAR(20)  NOT NULL  , 
+		data_conclusao varchar(20)  DEFAULT ''  , 
+		parametros text  NOT NULL  , 
+		status char(1)  NOT NULL  DEFAULT '0',
+		user_insert int4  NOT NULL  , 
+		user_update int4  NOT NULL  , 
+		PRIMARY KEY(id_empresa,name_file) 
+)
+ WITHOUT OIDS 
+ TABLESPACE "Producao" 
+ GO 
+ /* 0-Não iniciado, 2-Concluído , 3-Falha , 4-Salvo */
 /* TRUNCATE TABLES */ 
 TRUNCATE TABLE Public.parametros RESTART IDENTITY; 
 GO 

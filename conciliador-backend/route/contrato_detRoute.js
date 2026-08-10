@@ -463,33 +463,35 @@ catch (err)
 /* ROTA CONSULTA POST contratos_det */
 router.post("/contratos_det",async function(req, res) {
 /*
-	{
-		"id_empresa":0, 
-		"id":0, 
-		"competencia":"", 
-		"cod_empresa":0, 
-		"cod_cliente":"", 
-		"cliente":"", 
-		"cnpj_cliente":"", 
-		"doc_conciliador":"", 
-		"proposta":"", 
-		"acao":"", 
-		"tipo_de_verba":"", 
-		"tipo_de_pagamento":"", 
-		"status":"", 
-		"status_assinatura":"", 
-		"status_arquivos":"", 
-		"id_paf":0, 
-		"id_sim":0, 
-		"id_email":0, 
-		"id_arker":0,
-		"saida":0 -> resultset 
-		"pagina":0, 
-		"tamPagina":50, 
-		"contador":"N", 
-		"orderby":"", 
-		"sharp":false 
+{
+    "params" : {
+						"id_empresa":1, 
+						"id":0, 
+						"competencia":"", 
+						"cod_empresa":0, 
+						"cod_cliente":"", 
+						"cliente":"", 
+						"cnpj_cliente":"", 
+						"doc_conciliador":"", 
+						"proposta":"", 
+						"acao":"", 
+						"tipo_de_verba":"", 
+						"tipo_de_pagamento":"", 
+						"status":"", 
+						"status_assinatura":"", 
+						"status_arquivos":"", 
+						"id_paf":0, 
+						"id_sim":0, 
+						"id_email":0, 
+						"id_arker":0,
+						"saida":1,
+						"pagina":0, 
+						"tamPagina":50, 
+						"contador":"N", 
+						"orderby":"", 
+						"sharp":false 
 	}
+}
 */
 try 
 	{

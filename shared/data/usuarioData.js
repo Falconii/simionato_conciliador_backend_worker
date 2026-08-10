@@ -32,6 +32,7 @@ exports.getCampos = function (Usuario) {
 };
 /* CRUD GET */
 exports.getUsuario = function (id_empresa, id) {
+
   strSql = ` select   
 			   usu.id_empresa as  id_empresa  
 			,  usu.id as  id  
@@ -59,6 +60,7 @@ exports.getUsuario = function (id_empresa, id) {
  			FROM usuarios usu 	  
 				 inner join gruposusuarios gru on gru.id_empresa = usu.id_empresa and gru.codigo = usu.grupo   
 			 where usu.id_empresa = ${id_empresa} and  usu.id = ${id}  `;
+			 
   return db.oneOrNone(strSql);
 };
 /* CRUD GET ALL*/
