@@ -20,8 +20,8 @@ let workerURL = "";
 
 if (process.env.WORKER_URL) {
   workerURL = process.env.WORKER_URL;
-  console.log("URL BACKEND Para Parametro : BACKEND_URL");
-  console.log("URL BACKEND:", workerURL);
+  console.log("URL WORKER_URL Para Parametro : WORKER_URL");
+  console.log("URL WORKER_URL:", workerURL);
 } else {
   const url_file = JSON.parse(fs.readFileSync("../shared/worker_url.json", "utf8"));
   console.log("==>",url_file);

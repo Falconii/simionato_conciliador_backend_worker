@@ -198,11 +198,11 @@ router.post("/cadastrartarefa", async function (req, res) {
 
     console.log("cadastrartarefar:",dados);
 
-    const par = JSON.parse(dados.params);
+    /* const par = JSON.parse(dados.params);
 
     console.log("params obj :", par);
 
-    dados.params = par;
+    dados.params = par; */
 
     const camposObrigatorios = ["id_empresa", "id_usuario", "tarefa", "params"];
     const camposAusentes = camposObrigatorios.filter(c => !dados[c]);
