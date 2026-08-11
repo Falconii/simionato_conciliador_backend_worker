@@ -73,7 +73,7 @@ router.post("/checkfile", async function (req, res) {
    //const caminhoArquivo = path.join(__dirname, '..', '..','shared/planilhas', fileName);
 
    
-   const caminhoArquivo = path.join(APP_ROOT, "..","shared","planilhas",filename);
+   const caminhoArquivo = path.join(APP_ROOT, "..","shared","planilhas",fileName);
 
     console.log("shared ==> ",caminhoArquivo);
     
