@@ -68,9 +68,14 @@ router.post("/checkfile", async function (req, res) {
 
      //const caminhoArquivo = path.join(__dirname, '..',  'planilhas', fileName);
 
-   console.log(path.join(__dirname, '..', '..','shared/planilhas', fileName),"Tentativa:",tentativa);
+   //console.log(path.join(__dirname, '..', '..','shared/planilhas', fileName),"Tentativa:",tentativa);
 
-   const caminhoArquivo = path.join(__dirname, '..', '..','shared/planilhas', fileName);
+   //const caminhoArquivo = path.join(__dirname, '..', '..','shared/planilhas', fileName);
+
+   
+   const caminhoArquivo = path.join(APP_ROOT, "..","shared","planilhas",filename);
+
+    console.log("shared ==> ",caminhoArquivo);
     
    // Controle de tentativas
 

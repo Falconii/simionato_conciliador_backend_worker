@@ -11,6 +11,7 @@ const crypto = require('crypto');
 const funcoes = require("../email/funcoes.js");
 
 
+
 const configParams = {
   "sheetName": "Relatório",
   "freezeHeader": true,
@@ -405,6 +406,10 @@ async function processarTarefas() {
 //01
 exports.startProcessamentoTarefas = function (intervaloSegundos = 5) {
 
+  const caminhoArquivo = path.join(APP_ROOT, "..","shared","planilhas");
+
+  console.log("shared ==> ",caminhoArquivo);
+
   const task = new AsyncTask(
     'Processamento de Tarefas',
     async () => {
@@ -653,7 +658,9 @@ async function exceltoemailordownload(rows, config, name_file) {
 
     console.log("Gerando arquivo Excel:", name_file);
 
-    const caminhoArquivo = path.join(__dirname, '..',  'planilhas', name_file);
+    const caminhoArquivo = path.join(APP_ROOT, "..","shared","planilhas",name_file);
+
+    console.log("shared ==> ",caminhoArquivo);
 
     console.log("Gerando arquivo Excel:", caminhoArquivo);
 

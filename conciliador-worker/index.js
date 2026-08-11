@@ -3,6 +3,13 @@ const cors = require("cors");
 const app = express();
 const processamentoSrv = require('../shared/service/processamentoService');
 
+const { APP_ROOT } = require("./root.js");
+
+global.APP_ROOT = APP_ROOT;
+
+console.log("ROOT:", APP_ROOT);
+
+
 
 const iniciar = async function () {
    
@@ -30,5 +37,9 @@ app.listen(PORT, () => {
   console.log(`Worker Consolidador No Ar. Porta ${PORT}`);
 });
 
+
+
+
+console.log("ROOT",APP_ROOT);
 
 iniciar();
