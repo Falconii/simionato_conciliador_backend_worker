@@ -62,7 +62,7 @@ router.post("/checkfile", async function (req, res) {
   console.log("Tentativa:", tentativa, "Max Tentativas:", maxTentativas);
 
   
-    console.log("Procurando Excel:", name_file);
+    console.log("Procurando Excel:", fileName);
 
     console.log(path.join(__dirname,'..','planilhas', fileName),"Tentativa:",tentativa);
 
