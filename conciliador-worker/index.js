@@ -23,6 +23,8 @@ app.use(
 app.use(express.json());
 
 app.use("/api/worker", require("./route/taskRoute"));
+app.use("/api/relatorio", require("./route/relatorioRoute"));
+
 
 app.listen(PORT, () => {
   console.log(`Worker Consolidador No Ar. Porta ${PORT}`);
