@@ -125,7 +125,12 @@ router.post("/finalizarelatorio/email", async function (req, res) {
       return response.notFound(res, "Usuário", { usuario: dados.id_usuario });
     }
 
-    const caminhoArquivo = path.join(__dirname, '..', '..', '..','shared/planilhas', dados.filename);
+    
+   const caminhoArquivo = path.join(APP_ROOT, "..","shared","planilhas",dados.filename);
+
+   console.log("shared ==> ",caminhoArquivo);
+ 
+   //const caminhoArquivo = path.join(__dirname, '..', '..', '..','shared/planilhas', dados.filename);
 
     try {
       await fs.access(caminhoArquivo);
@@ -174,7 +179,13 @@ router.post("/finalizarelatorio/download", async function (req, res) {
       return response.notFound(res, "Usuário", { usuario: dados.id_usuario });
     }
 
-      const caminhoArquivo = path.join(__dirname, '..', '..', '..','shared/planilhas', dados.filename);
+    
+   const caminhoArquivo = path.join(APP_ROOT, "..","shared","planilhas",dados.filename);
+
+    console.log("shared ==> ",caminhoArquivo);
+
+    //const caminhoArquivo = path.join(__dirname, '..', '..', '..','shared/planilhas', dados.filename);
+    
     try {
       await fs.access(caminhoArquivo);
 
