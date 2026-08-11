@@ -356,7 +356,7 @@ async function processarTarefas() {
       `);
 
       if (tarefas.length === 0) {
-        console.log("Nenhuma tarefa pendente");
+       // console.log("Nenhuma tarefa pendente");
         return;
       }
 
@@ -409,7 +409,7 @@ exports.startProcessamentoTarefas = function (intervaloSegundos = 5) {
     'Processamento de Tarefas',
     async () => {
       try {
-        console.log("chamando processarTarefas()...");
+        //console.log("chamando processarTarefas()...");
         await processarTarefas();   // sua função que usa SELECT FOR UPDATE SKIP LOCKED
       } catch (err) {
         console.log('Erro no processamento:', err);

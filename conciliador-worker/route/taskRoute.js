@@ -86,9 +86,14 @@ router.post("/relatoriocontratos", async function (req, res) {
           "user_update": 0
     };
 
+    let tarefaCadastrada = {};
+
     console.log("Indo cadastrar tarefa", tarefa)
-    
-    const tarefaCadastrada = await tarefaSrv.getTarefa(dados.id_empresa, tarefa.name_file);
+    try{
+      tarefaCadastrada = await tarefaSrv.getTarefa(dados.id_empresa, tarefa.name_file);
+    } catch(err){
+      console.log("Erro Na Pesquisa Da Tarefa",err);
+    }
 
     if (tarefaCadastrada) {
       return  res.status(200).json({
@@ -96,7 +101,11 @@ router.post("/relatoriocontratos", async function (req, res) {
       tarefa: tarefaCadastrada
     });
     } else {
-      tarefa = await tarefaSrv.insertTarefa(tarefa);
+      try {
+        tarefa = await tarefaSrv.insertTarefa(tarefa);
+      } catch(err) {
+        console.log("Erro No Cadastro Da Tarefa",err);
+      }
     }
 
     console.log("Tarefa cadastrada:", tarefa);
