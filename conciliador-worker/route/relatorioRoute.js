@@ -80,8 +80,8 @@ router.post("/checkfile", async function (req, res) {
    // Controle de tentativas
 
   if (Number(tentativa) > Number(maxTentativas)) {
-      return res.status(408).json({
-      status: "failed",
+      return res.status(200).json({
+      status: "FimTentativas",
       message: "Limite de tentativas excedido"
     });
   }
@@ -178,9 +178,8 @@ router.post("/finalizarelatorio/download", async function (req, res) {
     if (!usuario) {
       return response.notFound(res, "Usuário", { usuario: dados.id_usuario });
     }
-
     
-   const caminhoArquivo = path.join(APP_ROOT, "..","shared","planilhas",dados.filename);
+    const caminhoArquivo = path.join(APP_ROOT, "..","shared","planilhas",dados.filename);
 
     console.log("shared ==> ",caminhoArquivo);
 
