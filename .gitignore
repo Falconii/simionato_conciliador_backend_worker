@@ -12,4 +12,4 @@ app_url.txt
 *.zip
 /upload/*.*
 /dados_locais/*.*
-/planilhas/*.*
+/planilhas/*.xlsx
