@@ -61,10 +61,17 @@ router.post("/checkfile", async function (req, res) {
 
   console.log("Tentativa:", tentativa, "Max Tentativas:", maxTentativas);
 
-  console.log(path.join(__dirname,'..', '..', '..','shared/planilhas', fileName),"Tentativa:",tentativa);
+  
+    console.log("Procurando Excel:", name_file);
 
-  const caminhoArquivo = path.join(__dirname, '..', '..', '..','shared/planilhas', fileName);
+    console.log(path.join(__dirname,'..','planilhas', fileName),"Tentativa:",tentativa);
 
+    const caminhoArquivo = path.join(__dirname, '..',  'planilhas', fileName);
+
+      /*   console.log(path.join(__dirname,'..', '..', '..','shared/planilhas', fileName),"Tentativa:",tentativa);
+
+        const caminhoArquivo = path.join(__dirname, '..', '..', '..','shared/planilhas', fileName);
+      */
    // Controle de tentativas
 
   if (Number(tentativa) > Number(maxTentativas)) {
