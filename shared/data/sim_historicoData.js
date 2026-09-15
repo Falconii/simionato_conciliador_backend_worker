@@ -204,6 +204,17 @@ if (params) {
 					where += `trim(ass.upload_cliente)  = '${params.upload_cliente.trim()}' `;
 				}
 
+				if (params.descrpasso !== '') {
+					if (where != "") where += " and ";
+					where += `trim(sim.descrpasso)  = '${params.descrpasso.trim()}' `;
+				}
+
+				if (params.modoas !== '') {
+					if (where != "") where += " and ";
+					where += `trim(sim.modoas)  = '${params.modoas.trim()}' `;
+				}
+
+
 				if (where != "") where = " where " + where;
 				if (params.pagina != 0) {
 					paginacao = `limit ${params.tamPagina} offset((${params.pagina} -1) * ${params.tamPagina})`;

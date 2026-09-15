@@ -77,7 +77,9 @@ AS $function$
             IF (new.origem = 'EMAIL') THEN
                update psts_anexos set status_arquivos = __status where id_empresa = new.id_empresa and id = new.id_origem;
            END IF;
-           RAISE NOTICE '__status % ',__status;
+           IF (new.origem = 'ARKER') THEN
+               update arkers set status_arquivos = __status where id_empresa = new.id_empresa and id = new.id_origem;
+           END IF;
            RETURN NEW;
        END IF;
        IF  (TG_OP = 'UPDATE') THEN 
@@ -91,7 +93,10 @@ AS $function$
            IF (new.origem = 'EMAIL') THEN
                update psts_anexos set status_arquivos = __status where id_empresa = new.id_empresa and id = new.id_origem;
            END IF;
-           RAISE NOTICE '__status % ',__status;
+           
+           IF (new.origem = 'ARKER') THEN
+               update arkers set status_arquivos = __status where id_empresa = new.id_empresa and id = new.id_origem;
+           END IF;
            RETURN NEW;
        END IF;
        IF  (TG_OP = 'DELETE') THEN 
@@ -105,7 +110,9 @@ AS $function$
            IF (OLD.origem = 'EMAIL') THEN
                update psts_anexos set status_arquivos = __status where id_empresa = OLD.id_empresa and id = OLD.id_origem;
            END IF;
-           RAISE NOTICE '__status % ',__status;
+           IF (OLD.origem = 'ARKER') THEN
+               update arkers set status_arquivos = __status where id_empresa = OLD.id_empresa and id = OLD.id_origem;
+           END IF;
            RETURN NEW;
        END IF;
        RETURN NEW;

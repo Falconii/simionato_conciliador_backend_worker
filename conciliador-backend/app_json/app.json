@@ -5148,8 +5148,629 @@
                         }
                     ],
                     "tablespace": "Producao"
+                },
+                {
+                    "name": "arker",
+                    "fields": [
+                        {
+                            "name": "id",
+                            "type": "int4",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "N",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "id_empresa",
+                            "type": "int4",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "empresa",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "no_grupo",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "no_acao",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "no_acordo",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "documento_lancamento",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "exercicio_documento_lancamento",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "valor_original",
+                            "type": "numeric",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "valor_liquido",
+                            "type": "numeric",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "data_base",
+                            "type": "date",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "data_lancamento",
+                            "type": "date",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "data_documento",
+                            "type": "date",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "ordem_de_pagamento",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "centro_de_custo",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "bloqueio",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "denominacao_bloqueio",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "usuario_criador_doc_lcto",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "data_criacao_doc_lcto",
+                            "type": "date",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "hora_criacao_doc_lcto",
+                            "type": "time",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "cod_fornecedor_execucao",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "denominacao_fornecedor_execucao",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "cnpj_fornecedor_execucao",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "status_arker",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "denominacao_status_arker",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "doc_transferencia_compensacao",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "exercicio_doc_transferencia_compensacao",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "usuario_criador_doc_transf_compensacao",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "data_criacao_doc_tranf_compensacao",
+                            "type": "date",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "hora_criacao_doc_transf_comp",
+                            "type": "time",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "cod_fornecedor_pagador",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "denominacao_fornecedor_pagador",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "cnpj_fornecedor_pagador",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "documento_estorno",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "exercicio_doc_estorno",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "usuario_criador_doc_estorno",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "data_criacao_doc_estorno",
+                            "type": "date",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "hora_criacao_doc_estorno",
+                            "type": "time",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "codigo_agrupamento",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "tipo_documento_arker",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "tipo_processo_arker",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "tx_tipo_proc_arker",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "frm_pagto",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "conta_do_razao",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "texto",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "tx_tip_doc_ark",
+                            "type": "text",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "status",
+                            "type": "char",
+                            "length": 1,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "status_rc",
+                            "type": "char",
+                            "length": 1,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "status_arquivos",
+                            "type": "char",
+                            "length": 1,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "status_assinatura",
+                            "type": "char",
+                            "length": 1,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "user_insert",
+                            "type": "int4",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "user_update",
+                            "type": "int4",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "S",
+                            "padrao": "",
+                            "validacao": []
+                        }
+                    ],
+                    "inner_join": [],
+                    "left_join": [],
+                    "primaryKey": [
+                        {
+                            "key": "id_empresa"
+                        },
+                        {
+                            "key": "id"
+                        }
+                    ],
+                    "variables": {
+                        "getone": "arker",
+                        "getall": "arkets",
+                        "alias": "arker"
+                    },
+                    "where": {
+                        "parametro_01": [
+                            {
+                                "name": "id_empresa",
+                                "filtro": "S",
+                                "atividador": " !== 0 ",
+                                "tipo": "number",
+                                "padrao": 0
+                            },
+                            {
+                                "name": "id",
+                                "filtro": "S",
+                                "atividador": " !== 0 ",
+                                "tipo": "number",
+                                "padrao": 0
+                            },
+                            {
+                                "name": "no_acao",
+                                "filtro": "S",
+                                "atividador": " !== '' ",
+                                "tipo": "string",
+                                "padrao": 0
+                            },
+                            {
+                                "name": "no_acordo",
+                                "filtro": "S",
+                                "atividador": " !== '' ",
+                                "tipo": "string",
+                                "padrao": 0
+                            },
+                            {
+                                "name": "data_lancamento",
+                                "filtro": "S",
+                                "atividador": " !== '' ",
+                                "tipo": "string",
+                                "padrao": ""
+                            },
+                            {
+                                "name": "valor_liquido",
+                                "filtro": "S",
+                                "atividador": " !== 0 ",
+                                "tipo": "number",
+                                "padrao": ""
+                            },
+                            {
+                                "name": "cod_fornecedor_execucao",
+                                "filtro": "S",
+                                "atividador": " !== '' ",
+                                "tipo": "string",
+                                "padrao": ""
+                            },
+                            {
+                                "name": "denominacao_fornecedor_execucao",
+                                "filtro": "S",
+                                "atividador": " !== '' ",
+                                "tipo": "string",
+                                "padrao": ""
+                            },
+                            {
+                                "name": "cnpj_fornecedor_execucao",
+                                "filtro": "S",
+                                "atividador": " !== '' ",
+                                "tipo": "string",
+                                "padrao": ""
+                            },
+                            {
+                                "name": "denominacao_status_arker",
+                                "filtro": "S",
+                                "atividador": " !== '' ",
+                                "tipo": "string",
+                                "padrao": ""
+                            },
+                            {
+                                "name": "frm_pagto",
+                                "filtro": "S",
+                                "atividador": " !== '' ",
+                                "tipo": "string",
+                                "padrao": ""
+                            },
+                            {
+                                "name": "pagina",
+                                "filtro": "N",
+                                "atividador": "",
+                                "tipo": "number",
+                                "padrao": 0
+                            },
+                            {
+                                "name": "tamPagina",
+                                "filtro": "N",
+                                "atividador": "",
+                                "tipo": "number",
+                                "padrao": 50
+                            },
+                            {
+                                "name": "contador",
+                                "filtro": "N",
+                                "atividador": "",
+                                "tipo": "string",
+                                "padrao": "N"
+                            },
+                            {
+                                "name": "orderby",
+                                "filtro": "N",
+                                "atividador": "",
+                                "tipo": "string",
+                                "padrao": ""
+                            },
+                            {
+                                "name": "sharp",
+                                "filtro": "N",
+                                "atividador": "",
+                                "tipo": "boolean",
+                                "padrao": "false"
+                            }
+                        ]
+                    },
+                    "orderby": [
+                        {
+                            "label": "",
+                            "comparativo": " != '' ",
+                            "key": "arker.id_empresa,arker.id"
+                        },
+                        {
+                            "label": "000001",
+                            "comparativo": " != '' ",
+                            "key": "arker.id_empresa,arker.id"
+                        },
+                        {
+                            "label": "000002",
+                            "comparativo": " != '' ",
+                            "key": "arker.id_empresa,arker.no_acao,arker.no_acordo"
+                        }
+                    ],
+                    "tablespace": "Producao"
                 }
-
             ],
             "parametros": []
         },

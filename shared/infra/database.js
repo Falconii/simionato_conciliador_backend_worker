@@ -7,9 +7,9 @@ if (process.env.DATABASE_URL) {
   dbConfig = process.env.DATABASE_URL;
   console.log("Conexão Configurada Para DATABASE_URL!!");
 } else {
-  const conexao = JSON.parse(fs.readFileSync("../shared/conexoes_local.json", "utf8"));
+  const conexao = JSON.parse(fs.readFileSync("../shared/conexoes_nuvem.json", "utf8"));
   dbConfig = conexao.database_url;
-  console.log("Conexão configurada Para Local!! -conexoes_local.json", dbConfig);
+  console.log("Conexão configurada Para Local!! -conexoes_nuvem.json", dbConfig);
 }
 
 const db = pgp(dbConfig);

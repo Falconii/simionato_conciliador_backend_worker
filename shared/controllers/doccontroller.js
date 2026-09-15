@@ -21,9 +21,10 @@ async function processaUploadDocumentos(
             throw new Error("Pasta não encontrada para os parâmetros fornecidos.");
         }
 
-        const folder_id = pasta.pasta;
+        const folder_id = pasta.pasta ;
 
         console.log("📁 [processaUploadFoto] Pasta obtida:", pasta);
+
         // Autenticação Google
         const params = await funcoes.loadCredencials(id_empresa);
         const oauth2Client = funcoes.getoauth2Client(params);

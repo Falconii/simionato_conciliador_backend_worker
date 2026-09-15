@@ -1,5 +1,6 @@
-const db = require('./infra/database');
-const contratodetSrv = require("./service/contrato_detService");
+const db = require('../shared/infra/database');
+//const contratodetSrv = require("./service/contrato_detService");
+const pafs_cab = require("../shared/service/paf_cabService.js")
 
 
 console.log(">>> Arquivo carregado!");
@@ -77,32 +78,26 @@ async function gerarConfigExcel(sql) {
     params = {
 		"id_empresa":1, 
 		"id":0, 
-		"competencia":"", 
-		"cod_empresa":0, 
-		"cod_cliente":"", 
-		"cliente":"", 
-		"cnpj_cliente":"", 
-		"doc_conciliador":"", 
-		"proposta":"", 
-		"acao":"", 
-		"tipo_de_verba":"", 
-		"tipo_de_pagamento":"", 
+		"nome_arquivo":"", 
+		"file_name":"", 
+		"processado":"", 
+		"qtd_contratos":0, 
 		"status":"", 
+		"total_valor":0, 
 		"status_assinatura":"", 
-		"status_arquivos":"", 
-		"id_paf":0, 
-		"id_sim":0, 
-		"id_email":0, 
-		"id_arker":0,
-		"saida":3,
-		"pagina":1, 
+		"status_arquivo":"", 
+		"ass_obs":"", 
+		"ass_resposta":"", 
+        "status_arquivos":"",
+        "saida":3,
+		"pagina":0, 
 		"tamPagina":50, 
 		"contador":"N", 
 		"orderby":"", 
 		"sharp":false 
 	}
 
-    const sql = await contratodetSrv.getContratos_Det(params);
+    const sql = await pafs_cab.getPafs_Cab(params);
 
     await gerarConfigExcel(sql);
 

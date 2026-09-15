@@ -175,7 +175,14 @@ exports.getPafs_Cab = function(params) {
 				 left join assinaturas ass on pafs_cab.id_empresa  = ass.id_empresa   and pafs_cab.id = ass.id_cab    
 			${where} 			${orderby} ${paginacao} `;
             console.log("getPafs_Cab", strSql);
-            return db.manyOrNone(strSql);
+            if (params.saida && params.saida == 3) 
+                {
+                  return strSql;
+                }
+            else {
+                    return db.manyOrNone(strSql);
+            }
+            
         }
     } else {
         strSql = `select   

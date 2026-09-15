@@ -4,7 +4,6 @@ const PORT = process.env.PORT || 3000;
 const path = require("path");
 const sharp = require("sharp");
 const fs = require("fs");
-
 async function listFiles(driveService, folderId, tamPage, onePage) {
     try {
         let retorno = [];
@@ -158,9 +157,20 @@ exports.saveFile = async function(
             return {
                 message: "Arquivo Já Existe Na Pasta! GOOGLE DRIVE",
                 data: null,
+                error: "Arquivo Já Existe Na Pasta! GOOGLE DRIVE",
             };
         }
         console.log("Passei pelo exists 3");
+
+        const filePath = path.join(__dirname, "..", "..", "conciliador-backend", "upload", file.originalname);
+
+        if (!fs.existsSync(filePath)) {
+            return {
+                message: `Arquivo não encontrado: ${filePath}`,
+                data: null,
+                error: "Arquivo não encontrado",
+            };
+        }
         const response = await driveService.files.create({
             requestBody: {
                 name: googleFileName,
@@ -169,13 +179,12 @@ exports.saveFile = async function(
             },
             media: {
                 mimeType: file.mimeType,
-                body: fs.createReadStream(`./upload/${file.originalname}`),
+                body: fs.createReadStream(filePath),
             },
         });
         return { message: "Imagem Salva Com Sucesso!", data: response.data };
     } catch (error) {
-        console.log("Erro:", error);
-        throw error;
+        return { message: "Erro ao salvar arquivo no Google Drive", data: null, error: error.message };
     }
 };
 

@@ -4,6 +4,8 @@ const shared = require("../../shared/util/shared.js");
 const { AsyncTask, SimpleIntervalJob, ToadScheduler } = require('toad-scheduler');
 const scheduler = new ToadScheduler();
 const contrato_detSrv = require('../../shared/service/contrato_detService');
+const pafs_detSrv = require('../../shared/service/paf_detService.js')
+const paf_cabSrv = require('../../shared/service/paf_cabService.js')
 const usuarioSrv = require('../../shared/service/usuarioService');
 const { gerarExcelGenerico } = require('../../shared/excel/excelgenarator');
 const path = require('path');
@@ -12,7 +14,7 @@ const funcoes = require("../email/funcoes.js");
 
 
 
-const configParams = {
+const configParamsContratos = {
   "sheetName": "Relatório",
   "freezeHeader": true,
   "autoFilter": true,
@@ -335,7 +337,149 @@ const configParams = {
   ]
 }
 
+const configParamsPafsDet = {
 
+  "sheetName": "Relatório",
+  "freezeHeader": true,
+  "autoFilter": true,
+  "columns": [
+    {
+      "header": "id_empresa",
+      "key": "id_empresa",
+      "width": 12,
+      "align": "right",
+      "format": "0"
+    },
+    {
+      "header": "id",
+      "key": "id",
+      "width": 6,
+      "align": "right",
+      "format": "0"
+    },
+    {
+      "header": "nome_arquivo",
+      "key": "nome_arquivo",
+      "width": 60,
+      "align": "left",
+      "format": null
+    },
+    {
+      "header": "pasta_arquivo",
+      "key": "pasta_arquivo",
+      "width": 57,
+      "align": "left",
+      "format": null
+    },
+    {
+      "header": "id_folder",
+      "key": "id_folder",
+      "width": 11,
+      "align": "left",
+      "format": null
+    },
+    {
+      "header": "id_file",
+      "key": "id_file",
+      "width": 9,
+      "align": "left",
+      "format": null
+    },
+    {
+      "header": "file_name",
+      "key": "file_name",
+      "width": 11,
+      "align": "left",
+      "format": null
+    },
+    {
+      "header": "qtd_paginas_total",
+      "key": "qtd_paginas_total",
+      "width": 19,
+      "align": "right",
+      "format": "0"
+    },
+    {
+      "header": "tamanho",
+      "key": "tamanho",
+      "width": 11,
+      "align": "right",
+      "format": "#,##0.00;#,##0.00;0"
+    },
+    {
+      "header": "processado",
+      "key": "processado",
+      "width": 27,
+      "align": "left",
+      "format": null
+    },
+    {
+      "header": "qtd_contratos",
+      "key": "qtd_contratos",
+      "width": 15,
+      "align": "right",
+      "format": "0"
+    },
+    {
+      "header": "status",
+      "key": "status",
+      "width": 8,
+      "align": "left",
+      "format": null
+    },
+    {
+      "header": "total_valor",
+      "key": "total_valor",
+      "width": 13,
+      "align": "right",
+      "format": "#,##0.00;#,##0.00;0"
+    },
+    {
+      "header": "status_assinatura",
+      "key": "status_assinatura",
+      "width": 19,
+      "align": "left",
+      "format": null
+    },
+    {
+      "header": "status_arquivos",
+      "key": "status_arquivos",
+      "width": 17,
+      "align": "left",
+      "format": null
+    },
+    {
+      "header": "user_insert",
+      "key": "user_insert",
+      "width": 13,
+      "align": "right",
+      "format": "0"
+    },
+    {
+      "header": "user_update",
+      "key": "user_update",
+      "width": 13,
+      "align": "right",
+      "format": "0"
+    },
+    {
+      "header": "ass_obs",
+      "key": "ass_obs",
+      "width": 9,
+      "align": "left",
+      "format": null
+    },
+    {
+      "header": "ass_resposta",
+      "key": "ass_resposta",
+      "width": 14,
+      "align": "left",
+      "format": null
+    }
+  ]
+}
+
+const configParamsSim = {}
 
 /* CRUD GET SERVICE */
 //02
@@ -366,13 +510,22 @@ async function processarTarefas() {
 
           console.log("Processando tarefa:", tarefa.id);
 
-          const resultado = await gerarRelatorioContratos(
-            tarefa.parametros,
-            tarefa.id_empresa,
-            tarefa.id_usuario,
-            tarefa.name_file
-          );
-
+          if (tarefa.sigla == 'contrato_det01'){
+                const resultado = await gerarRelatorioContratos(
+                tarefa.parametros,
+                tarefa.id_empresa,
+                tarefa.id_usuario,
+                tarefa.name_file
+              );
+          }
+          if (tarefa.sigla == 'paf_cab01'){
+                const resultado = await gerarRelatorioPafCab(
+                tarefa.parametros,
+                tarefa.id_empresa,
+                tarefa.id_usuario,
+                tarefa.name_file
+              );
+          }
           await t.none(`
             UPDATE tarefas
             SET status = '${resultado.status}',
@@ -470,7 +623,7 @@ async function gerarRelatorioContratos(parametros, id_empresa, id_usuario, name_
     try 
     {
       paramsAjustado = {
-        id_empresa:Number(params.id_empresa),
+          id_empresa:Number(params.id_empresa),
           id:Number(params.id),
           competencia:params.competencia,
           cod_empresa:Number(params.cod_empresa),
@@ -531,7 +684,7 @@ async function gerarRelatorioContratos(parametros, id_empresa, id_usuario, name_
 
       const caminhoArquivo = await exceltoemailordownload(
         lsRegistros,
-        configParams,
+        configParamsContratos,
         name_file
       );
 
@@ -558,6 +711,116 @@ async function gerarRelatorioContratos(parametros, id_empresa, id_usuario, name_
     };
   }
 }
+
+async function gerarRelatorioPafCab(parametros, id_empresa, id_usuario, name_file) {
+  try {
+
+
+    let params = {}
+    
+    console.log("Gerando relatório de gerarRelatorioPafCab para empresa:",parametros);
+   
+
+    try {
+          params = JSON.parse(parametros.trim().replace(/^"|"$/g, ""));
+          
+          console.log("woker params ==> ", params);
+          console.log("worker params.competencia ==> ", params.competencia);
+    } catch (err) {
+        console.error("Erro ao analisar parâmetros JSON:", err);
+        return {
+            status: 3,
+            message: "Erro ao analisar parâmetros JSON"
+        };
+    }
+
+    const usuario = await usuarioSrv.getUsuario(id_empresa, id_usuario);
+
+    let lsRegistros = [];
+
+    try 
+    {
+      paramsAjustado = {   
+        id_empresa:id_empresa,
+        id:params.id,
+        nome_arquivo:params.nome_arquivo,
+        processado:"",
+        qtd_contratos:0,
+        status:params.status,
+        total_valor:Number(params.total_valor),
+        status_assinatura:params.status_assinatura,
+        status_arquivos:params.status_arquivos,
+        ass_obs:params.ass_obs,
+        ass_resposta:params.ass_resposta,
+        saida:2,
+        tamPagina:Number(params.tamPagina),
+        contador: 'N' ,
+        orderby: params.orderby,  
+        sharp:boolean = params.sharp
+      }
+      console.log("Params", params);
+      console.log("---------------------------------------------");
+      console.log("paramsAjustado ==> ", paramsAjustado);
+      lsRegistros = await paf_cabSrv.getPafs_Cab(paramsAjustados);
+    }
+    catch (err) {
+      console.error("Erro ao buscar registros:", err);
+        return {
+          status: 2,
+          tipo: "json",
+          conteudo: lsRegistros
+       };
+      
+    }
+
+    console.log("Registros encontrados:", lsRegistros.length);
+
+    if (lsRegistros.length === 0) {
+      return { status: 4, message: "Nenhum registro encontrado" };
+    }
+
+    // saída 3 = apenas SQL
+    if (params.saida === 3) {
+      return {
+        status: 2,
+        tipo: "sql",
+        conteudo: lsRegistros.replace(/[\n\t]/g, '')
+      };
+    }
+
+    // saída 1 ou 2 = gerar arquivo
+    if (params.saida === 1 || params.saida === 2) {
+
+      const caminhoArquivo = await exceltoemailordownload(
+        lsRegistros,
+        configParamsPafsDet,
+        name_file
+      );
+
+     return {
+        status: 2,
+        tipo: "arquivo",
+        arquivo: caminhoArquivo,
+        nome: name_file
+      };
+    }
+
+    // saída padrão = JSON
+    return {
+      status: 2,
+      tipo: "json",
+      conteudo: lsRegistros
+    };
+
+  } catch (err) {
+    console.error("Erro ao gerar relatório de contratos:", err);
+    return {
+      status: 3,
+      message: err.message
+    };
+  }
+}
+
 
 async function gerarRelatorioSIMs(parametros, id_empresa, id_usuario, name_file) {
   try {
@@ -615,7 +878,7 @@ async function gerarRelatorioSIMs(parametros, id_empresa, id_usuario, name_file)
 
       const caminhoArquivo = await exceltoemailordownload(
         lsRegistros,
-        configParams,
+        configParamsSim,
         name_file
       );
 

@@ -134,21 +134,26 @@ catch (err)
 router.post("/sim_historicos",async function(req, res) {
 /*
 	{
-		"id_empresa":0, 
-		"id":0, 
-		"codemp":0, 
-		"numpro":0, 
-		"cod_cli_sim":"", 
-		"datini":"", 
-		"id_contrato":0, 
-		"status_conciliador":"", 
-		"status_arquivos":"", 
-		"status_assinatura":"", 
-		"pagina":0, 
-		"tamPagina":50, 
-		"contador":"N", 
-		"orderby":"", 
-		"sharp":false 
+	  "id_empresa":0,   id: "",
+      codemp: "",
+      numpro: "",
+      cod_cli_sim: "",
+      datini: "",
+      id_contrato: "",
+      acordo: "",
+      status_conciliador: '',
+      status_arquivos: '',
+      status_assinatura: 'F',
+      obs_assinatura:'SEM FILTRO',
+      cond_pagto:'-1',
+      upload_cliente:'',
+      modoas:'',
+      descrpasso:'',
+      pagina: 0 ,
+      tamPagina: 50 ,
+      contador:'N' ,
+      orderby: '000001' ,
+      sharp: false
 	}
 */
 try 

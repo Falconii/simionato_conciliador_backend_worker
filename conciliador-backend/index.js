@@ -63,6 +63,7 @@ app.use("/api/usuario", require("./route/usuarioRoute"));
 app.use("/api/grupousuario", require("./route/grupousuarioRoute"));
 app.use("/api/importacaosim", require("./route/ImportacaoSimRoute.js"));
 app.use("/api/importacaopaf", require("./route/ImportacaoPafRoute.js"));
+app.use("/api/importacaoarker", require("./route/ImportacaoArkerRoute.js"));
 app.use("/api/contrato_cab", require("./route/contrato_cabRoute.js"));
 app.use("/api/contrato_det", require("./route/contrato_detRoute.js"));
 app.use("/api/assinatura", require("./route/assinaturaRoute.js"));
@@ -93,7 +94,8 @@ app.use("/api/pst_email", require("./route/pst_emailRoute.js"));
 app.use("/api/relatorio/complementar", require("./route/complementar/relatorioRoute.js"));
 app.use("/api/sim_acordo", require("./route/sim_acordoRoute.js"));
 app.use("/api/tarefa", require("./route/tarefaRoute.js"));
-
+app.use("/api/arker", require("./route/arkerRoute.js"));
+app.use("/api/arker/complementar", require("./route/complementar/arkerRoute.js"));
 app.listen(PORT, () => {
   console.log(`Servidor No Ar. Porta ${PORT}`);
 });
