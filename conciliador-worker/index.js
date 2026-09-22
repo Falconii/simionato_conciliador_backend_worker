@@ -13,7 +13,7 @@ console.log("ROOT:", APP_ROOT);
 
 const iniciar = async function () {
    
- processamentoSrv.startProcessamentoTarefas(10); // Inicia o processamento a cada 5 segundos
+ processamentoSrv.startProcessamentoTarefas(30); // Inicia o processamento a cada 5 segundos
 
 };
 

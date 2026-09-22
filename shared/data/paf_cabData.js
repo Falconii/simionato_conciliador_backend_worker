@@ -79,14 +79,7 @@ exports.getPafs_Cab = function(params) {
                 where += `upper(trim(pafs_cab.nome_arquivo))  like '%${params.nome_arquivo.toUpperCase().trim()}%' `;
             }
         }
-        if (params.file_name.trim() !== "") {
-            if (where != "") where += " and ";
-            if (params.sharp) {
-                where += `pafs_cab.file_name = '${params.file_name}' `;
-            } else {
-                where += `pafs_cab.file_name like '%${params.file_name.trim()}%' `;
-            }
-        }
+        
 
         if (params.processado.trim() !== "") {
             if (where != "") where += " and ";

@@ -484,77 +484,83 @@ const configParamsSim = {}
 /* CRUD GET SERVICE */
 //02
 async function processarTarefas() {
-  
-  
+
   const hoje = shared.dataHoraSaoPaulo();
 
-  try {
-    await db.tx(async t => {
+  // 1. Seleciona e marca tarefas como "1" (processando)
+  const tarefas = await db.any(`
+    UPDATE tarefas
+    SET status = '1'
+    WHERE id IN (
+      SELECT id
+      FROM tarefas
+      WHERE status = '0'
+      ORDER BY id
+      LIMIT 10
+    )
+    RETURNING *
+  `);
 
-      const tarefas = await t.any(`
-        SELECT *
-        FROM tarefas
-        WHERE status = '0'
-        ORDER BY id ASC
-        LIMIT 10
-        FOR UPDATE SKIP LOCKED
-      `);
+  if (tarefas.length === 0) {
+    console.log("Nenhuma tarefa pendente");
+    return;
+  }
 
-      if (tarefas.length === 0) {
-       // console.log("Nenhuma tarefa pendente");
-        return;
+  // 2. Processa cada tarefa FORA da transação
+  for (const tarefa of tarefas) {
+
+    try {
+      console.log("Processando tarefa:", tarefa.id);
+
+      let resultado = { status: '2' }; // concluído por padrão
+
+      if (tarefa.sigla === 'contrato_det01') {
+        resultado = await gerarRelatorioContratos(
+          tarefa.parametros,
+          tarefa.id_empresa,
+          tarefa.id_usuario,
+          tarefa.name_file
+        );
       }
 
-      for (const tarefa of tarefas) {
-        try {
-
-          console.log("Processando tarefa:", tarefa.id);
-
-          if (tarefa.sigla == 'contrato_det01'){
-                const resultado = await gerarRelatorioContratos(
-                tarefa.parametros,
-                tarefa.id_empresa,
-                tarefa.id_usuario,
-                tarefa.name_file
-              );
-          }
-          if (tarefa.sigla == 'paf_cab01'){
-                const resultado = await gerarRelatorioPafCab(
-                tarefa.parametros,
-                tarefa.id_empresa,
-                tarefa.id_usuario,
-                tarefa.name_file
-              );
-          }
-          await t.none(`
-            UPDATE tarefas
-            SET status = '${resultado.status}',
-                data_conclusao = '${hoje}'
-            WHERE id_empresa = $1 AND id = $2
-          `, [tarefa.id_empresa, tarefa.id]);
-
-        } catch (err) {
-          console.log("Erro ao gerar relatório:", err);
-
-          // IMPORTANTE: lançar erro para abortar a transação
-          throw err;
-        }
+      if (tarefa.sigla === 'paf_cab01') {
+        resultado = await gerarRelatorioPafCab(
+          tarefa.parametros,
+          tarefa.id_empresa,
+          tarefa.id_usuario,
+          tarefa.name_file
+        );
       }
-    });
 
-  } catch (err) {
-    console.log("Transação abortada, atualizando status da tarefa...");
+      // 3. Verifica se o usuário cancelou enquanto processava
+      const statusAtual = await db.one(`
+        SELECT status FROM tarefas WHERE id = $1
+      `, [tarefa.id]);
 
-    // Atualiza status FORA da transação
-    await db.none(`
-      UPDATE tarefas
-      SET status = '3',
-          data_conclusao = '${hoje}'
-      WHERE id_empresa = $1 AND id = $2
-    `, [tarefa.id_empresa, tarefa.id]);
+      if (statusAtual.status === '4') {
+        console.log("Tarefa cancelada pelo usuário:", tarefa.id);
+        continue;
+      }
 
+      // 4. Atualiza conclusão
+      await db.none(`
+        UPDATE tarefas
+        SET status = $1, data_conclusao = $2
+        WHERE id = $3
+      `, [resultado.status, hoje, tarefa.id]);
+
+    } catch (err) {
+      console.log("Erro ao gerar relatório:", err);
+
+      await db.none(`
+        UPDATE tarefas
+        SET status = '3', data_conclusao = $1
+        WHERE id = $2
+      `, [hoje, tarefa.id]);
+    }
   }
 }
+
 
 //01
 exports.startProcessamentoTarefas = function (intervaloSegundos = 5) {
@@ -738,11 +744,12 @@ async function gerarRelatorioPafCab(parametros, id_empresa, id_usuario, name_fil
 
     let lsRegistros = [];
 
+
     try 
     {
       paramsAjustado = {   
         id_empresa:id_empresa,
-        id:params.id,
+        id:Number(params.id),
         nome_arquivo:params.nome_arquivo,
         processado:"",
         qtd_contratos:0,
@@ -753,15 +760,17 @@ async function gerarRelatorioPafCab(parametros, id_empresa, id_usuario, name_fil
         ass_obs:params.ass_obs,
         ass_resposta:params.ass_resposta,
         saida:2,
+        pagina:params.pagina,
         tamPagina:Number(params.tamPagina),
         contador: 'N' ,
         orderby: params.orderby,  
         sharp:boolean = params.sharp
       }
+      console.log("gerarRelatorioPafCab")
       console.log("Params", params);
       console.log("---------------------------------------------");
       console.log("paramsAjustado ==> ", paramsAjustado);
-      lsRegistros = await paf_cabSrv.getPafs_Cab(paramsAjustados);
+      lsRegistros = await paf_cabSrv.getPafs_Cab(paramsAjustado);
     }
     catch (err) {
       console.error("Erro ao buscar registros:", err);
@@ -820,7 +829,6 @@ async function gerarRelatorioPafCab(parametros, id_empresa, id_usuario, name_fil
     };
   }
 }
-
 
 async function gerarRelatorioSIMs(parametros, id_empresa, id_usuario, name_file) {
   try {

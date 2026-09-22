@@ -59,19 +59,10 @@ router.post("/checkfile", async function (req, res) {
   } 
 
 
-  console.log("Tentativa:", tentativa, "Max Tentativas:", maxTentativas);
+   console.log("Tentativa:", tentativa, "Max Tentativas:", maxTentativas);
 
   
-    console.log("Procurando Excel:", fileName);
-
-    //console.log(path.join(__dirname,'..','planilhas', fileName),"Tentativa:",tentativa);
-
-     //const caminhoArquivo = path.join(__dirname, '..',  'planilhas', fileName);
-
-   //console.log(path.join(__dirname, '..', '..','shared/planilhas', fileName),"Tentativa:",tentativa);
-
-   //const caminhoArquivo = path.join(__dirname, '..', '..','shared/planilhas', fileName);
-
+   console.log("Procurando Excel:", fileName);
    
    const caminhoArquivo = path.join(APP_ROOT, "..","shared","planilhas",fileName);
 
@@ -90,16 +81,19 @@ router.post("/checkfile", async function (req, res) {
     
     await fs.access(caminhoArquivo);
 
+    console.log("ACHEI O ARQUIVO !");
+
     return res.status(200).json({
       status: "ready",
       message: "Arquivo disponível"
     });
 
   } catch (err) {
-    return res.status(200).json({
-      status: "pending",
-      message: "Arquivo ainda não disponível"
-    });
+        console.log("Deu erro no checkfile",err);
+        return res.status(200).json({
+          status: "pending",
+          message: "Arquivo ainda não disponível"
+        });
   }
 });
 

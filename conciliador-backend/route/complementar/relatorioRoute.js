@@ -17,7 +17,7 @@ const {axiosWorker,workerURL} = require('../../../shared/infra/conexao_http');
 router.use(autenticarToken);
 
 
-router.post("/checkfile", async function (req, res) {
+router.post("/checkfile_mmm", async function (req, res) {
 
   id_empresa = req.id_empresa;
   id_usuario = req.id_usuario;
@@ -32,6 +32,9 @@ router.post("/checkfile", async function (req, res) {
 
   const tarefa = await tarefaSrv.getTarefa(id_empresa, fileName);
 
+  console.log("-------------------------------------------");
+  console.log("Tarefa do checkfile:",tarefa);
+
   if (!tarefa) {
       return res.status(404).json({
       status: "failed",
@@ -45,6 +48,14 @@ router.post("/checkfile", async function (req, res) {
       message: "Arquivo ainda não disponível"
     });
   }
+
+  if (tarefa.status === '2') {
+      return res.status(200).json({
+      status: "ready",
+      message: "Arquivo Gerado!"
+    });
+  }
+
   if (tarefa.status === '3') {
        return res.status(200).json({
       status: "failed",
@@ -77,7 +88,11 @@ router.post("/checkfile", async function (req, res) {
 
   try {
     
+    console.log("Pesquisando arquivo ",caminhoArquivo);
+
     await fs.access(caminhoArquivo);
+
+    console.log("achei");
 
     return res.status(200).json({
       status: "ready",
