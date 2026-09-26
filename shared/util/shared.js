@@ -246,3 +246,13 @@ exports.dataHoraSaoPaulo = function() {
 
   return formatter.format(new Date());
 }
+
+
+exports.getAnoTrimestre = function(data) {
+    const dt = (data instanceof Date) ? data : new Date(data);
+
+    const ano = dt.getFullYear();
+    const trimestre = Math.ceil((dt.getMonth() + 1) / 3);
+
+    return `${ano}-T${trimestre}`;
+}

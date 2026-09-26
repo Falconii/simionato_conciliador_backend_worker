@@ -120,7 +120,7 @@ router.post(
           console.log("g_doc da pesquisa", g_doc, g_doc.length);
 
           if (g_doc.length > 0) {
-            if (g_doc[0].status_upload !== "0") {
+            if (g_doc[0].status_upload !== "0" && g_doc[0].status_upload !== "2") {
               res.status(200).json({
                 message: "Arquivo Já Existe Na Base De Dados.",
               });
@@ -159,6 +159,9 @@ router.post(
               .toString()
               .padStart(6, "0")}_${originalName}`,
           );
+          if (resposta.message !== null){
+             messageGoogle = resposta.message;
+          }
           if (resposta.data !== null) {
             g_doc.id_folder = resposta.data.id_folder;
             g_doc.id_file = resposta.data.id;
@@ -168,12 +171,13 @@ router.post(
 
           console.log("Retorno do Google", resposta);
         } catch (err) {
+          messageGoogle = "Deu Erro Na Gravação do Google"; 
           console.log("Deu Erro Na Gravação do Google", err);
           g_doc.status_upload = "2";
           g_doc = await doc_gdriveSrv.updateDoc_Gdrive(g_doc);
         }
       }
-      res.status(200).json({ message: "Fim Do Processamento!" });
+      res.status(200).json({ message: "Fim Do Processamento!", messageGoogle:messageGoogle });
     } catch (err) {
       console.log(err);
       if (err.name == "MyExceptionDB") {

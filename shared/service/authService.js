@@ -11,24 +11,23 @@ const credenciais = JSON.parse(
 );
 
 const api = axios.create({
-    baseURL: "http://localhost:3000/api/",
+    baseURL: "https://conciliadorbakend-production.up.railway.app/api",
     timeout: 30000,
 });
 
-async function login() {
+async function login(id_usuario,senha) {
     try {
         console.log("Realizando login...", credenciais);
         const response = await api.post("/login", {
             id_empresa: credenciais.id_empresa,
-            codigo: credenciais.codigo,
-            password: credenciais.password,
+            codigo: id_usuario,
+            password: senha
         });
 
         const token = response.data.accessToken;
 
         // injeta o token automaticamente no axios
         api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
         console.log("Login realizado com sucesso");
         return token;
     } catch (error) {

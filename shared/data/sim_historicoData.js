@@ -1,5 +1,6 @@
 /* DATA sim_historicos */
 const db = require('../infra/database');
+const shared = require("../util/shared.js")
 
 /* GET CAMPOS */
 exports.getCampos = function(Sim_Historico){
@@ -135,6 +136,7 @@ if (params) {
 				if(params.orderby == '000000') orderby = 'sim.id_empresa,sim.codemp,sim.cod_cli_sim';
 				if(params.orderby == '000001') orderby = 'sim.id_empresa,sim.codemp,sim.datini';
 				if(params.orderby == '000002') orderby = 'sim.id_empresa,sim.codemp,sim.cod_cli_sim';
+				if(params.orderby == '000003') orderby = 'sim.id_empresa,sim.codemp,sim.numpro';
 
 				if (orderby != "") orderby = " order by " + orderby;
 				if(params.id_empresa  !== 0 ){
@@ -164,7 +166,7 @@ if (params) {
 				}
 				if(params.datini.trim()  !== ''){
 					if (where != "") where += " and ";
-					where +=  `sim.datini = '${params.datini}' `;
+					where +=  `sim.datini = '${shared.formatDateYYYYMMDD('01/'+params.datini)}'`;
 				}
 				if(params.id_contrato  !== 0 ){
 					if (where != "") where += " and "; 
@@ -214,6 +216,11 @@ if (params) {
 					where += `trim(sim.modoas)  = '${params.modoas.trim()}' `;
 				}
 
+				/* 2020-T1 */
+				if (params.trimestre && params.trimetro !== ''){
+                   if (where != "") where += " and ";
+				   where += `get_ano_trimestre(sim.datini)  = '${params.trimestre}' `;
+				}
 
 				if (where != "") where = " where " + where;
 				if (params.pagina != 0) {
@@ -289,7 +296,7 @@ if (params) {
 			FROM sim_historicos sim      
             left join assinaturas ass on ass.id_empresa = sim.id_empresa and ass.id_sim = sim.id
 			${where} 			${ orderby} ${ paginacao} `;
-			console.log("getSim_Historicos - Contador",strSql);
+			console.log("getSim_Historicos ",strSql);
 			return  db.manyOrNone(strSql);
 		}	}  else {
 		strSql = `select   
