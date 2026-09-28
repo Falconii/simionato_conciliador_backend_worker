@@ -122,7 +122,7 @@ router.post(
           if (g_doc.length > 0) {
             if (g_doc[0].status_upload !== "0" && g_doc[0].status_upload !== "2") {
               res.status(200).json({
-                message: "Arquivo Já Existe Na Base De Dados.",
+                message: `Arquivo Já Existe Na Base De Dados. ${file_name_original}`,
               });
               return;
             } else {

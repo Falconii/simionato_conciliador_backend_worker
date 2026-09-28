@@ -8,7 +8,7 @@ const path = require("path");
 const readline = require("readline");
 
 // Caminho da pasta
-const baseDir = "D:\\Anexo ASF Fernanda - 2022";
+const baseDir = "D:\\Anexo ASF Fernanda - 2020";
 
 // -----------------------------
 // 🔹 Definição dos parâmetros CLI
@@ -102,8 +102,6 @@ async function iniciar() {
     // Login com usuário e senha
     await login(opts.id_usuario, opts.senha.toString());
 
-    return ;
-
     const arquivos = fs.readdirSync(baseDir);
     let contador = 0;
 
@@ -151,33 +149,42 @@ async function iniciar() {
         // 🔹 Procedimento 1 — VALIDAR
         // -----------------------------
         if (opts.proc == 1) {
-            console.log("➡ Procedimento 1: Validação");
+            console.log("➡ Procedimento 1: Validação",sims.length);
+
+            
 
             for (const sim of sims) {
                 const prefixo = `${sim.codemp}-${sim.numpro}`;
                 const encontrados = arquivos.filter(nome => nome.startsWith(prefixo));
-
                 if (encontrados.length > 0) {
-                    const docs = await simUploadSrv.getDocGDrive({
-                        id_empresa: 1,
-                        origem: "SIM",
-                        id_origem: sim.id,
-                        tamPagina: 700,
-                        pagina: 0,
-                        orderby: "000003"
-                    });
-
+                    docs = [];
+                    try {
+                            docs = await simUploadSrv.getDocGDrive({
+                                id_empresa: 1,
+                                origem: "SIM",
+                                id_origem: sim.id,
+                                tamPagina: 700,
+                                pagina: 0,
+                                orderby: "000003"
+                            });
+                    } catch(error){
+                            if (error.status === 409) {
+                                        docs = [];
+                                    } else {
+                                        console.log("Erro:", error);
+                                        console.log("Erro Do Upload");
+                                    }
+                            }
                     if (encontrados.length !== docs.length) {
                         console.log(
-                            "comparação:",
+                            "comparação: ssd x docs_gdrive",
                             encontrados.length,
                             docs.length,
-                            `${sim.codemp}-${sim.numpro} id: ${sim.id}`
+                            `Empresa: ${sim.codemp}-Proposta: ${sim.numpro} ID: ${sim.id} Data: ${sim.datini}`
                         );
                     }
                 } else {
-                    console.log(`${sim.codemp}-${sim.numpro} id: ${sim.id}`);
-                    console.log("   Nenhum arquivo encontrado");
+                    console.log(`Empresa: ${sim.codemp}-Proposta: ${sim.numpro} ID: ${sim.id} Data: ${sim.datini} - Nenhum arquivo encontrado No SSD`) ;
                 }
             }
         }

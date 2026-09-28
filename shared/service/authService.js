@@ -2,7 +2,7 @@ const axios = require("axios");
 const path = require("path");
 const fs = require("fs");
 
-//"https://conciliadorbakend-production.up.railway.app/api",
+//"https://backend-v2-production-c641.up.railway.app/api",
 // "http://localhost:3000/api/",
 
 // Lê o arquivo local de credenciais
@@ -11,7 +11,7 @@ const credenciais = JSON.parse(
 );
 
 const api = axios.create({
-    baseURL: "https://conciliadorbakend-production.up.railway.app/api",
+    baseURL: "https://backend-v2-production-c641.up.railway.app/api",
     timeout: 30000,
 });
 
@@ -19,7 +19,7 @@ async function login(id_usuario,senha) {
     try {
         console.log("Realizando login...", credenciais);
         const response = await api.post("/login", {
-            id_empresa: credenciais.id_empresa,
+            id_empresa: 1,
             codigo: id_usuario,
             password: senha
         });
