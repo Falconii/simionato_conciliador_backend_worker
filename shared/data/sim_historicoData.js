@@ -228,10 +228,6 @@ if (params) {
                    if (where != "") where += " and ";
 				   where += `get_ano_trimestre(sim.datini)  = '${params.trimestre}' `;
 				}
-                if (params.datini && params.datini !== ''){
-                   if (where != "") where += " and ";
-				   where += `to_char(sim.datini, 'YYYY')  = '${ano}' `;
-				}
 				if (where != "") where = " where " + where;
 				if (params.pagina != 0) {
 					paginacao = `limit ${params.tamPagina} offset((${params.pagina} -1) * ${params.tamPagina})`;
