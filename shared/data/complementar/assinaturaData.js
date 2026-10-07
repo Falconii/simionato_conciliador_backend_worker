@@ -28,6 +28,12 @@ exports.getResumoObs = function(params) {
             innerHistorico = " inner join  sim_historicos h on h.id_empresa = assi.id_empresa and h.id = assi.id_sim ";
         }
 
+        if (params.arker && params.arker !== "") {
+            if (where != "") where += " and ";
+            where += `assi.id_arker <> 0 `;
+            innerHistorico = " inner join  sim_historicos h on h.id_empresa = assi.id_empresa and h.id = assi.id_arker ";
+        }
+
         if (where != "") where = " where " + where;
 
         strSql = `select distinct  

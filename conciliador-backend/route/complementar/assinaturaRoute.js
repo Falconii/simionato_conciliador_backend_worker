@@ -49,6 +49,7 @@ router.post("/getresumoobs", async function (req, res) {
                        id_empresa:0
                        paf:"S",
                        sim:""
+                       arker:""
 
                     */
   try {

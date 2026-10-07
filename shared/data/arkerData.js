@@ -113,8 +113,12 @@ exports.getArker = function(id_empresa,id){
 			,  arker.status_arquivos as  status_arquivos  
 			,  arker.status_assinatura as  status_assinatura  
 			,  arker.user_insert as  user_insert  
-			,  arker.user_update as  user_update    
- 			FROM arkers arker 	     
+			,  arker.user_update as  user_update  
+            ,  coalesce(ass.resposta,'')    as ass_resposta
+            ,  coalesce(ass.obs,'')            as ass_obs
+			,  coalesce(ass.upload_cliente,'')      as ass_upload_cliente  
+ 			FROM arkers arker
+            left join assinaturas ass on ass.id_empresa = arker.id_empresa and ass.id_arker = arker.id
 			 where arker.id_empresa = ${id_empresa} and  arker.id = ${id}  `;
 	return  db.oneOrNone(strSql);
 }
@@ -136,6 +140,13 @@ if (params) {
 		if (where != "") where += " and "; 
 		where += `arker.id_empresa = ${params.id_empresa} `;
 	}
+
+	/* filtro da Daine */
+	if (where != "") where += " and "; 
+	where += ` arker.status_arker <> 'E' `;
+
+
+
 	if(params.id  !== 0 ){
 		if (where != "") where += " and "; 
 		where += `arker.id = ${params.id} `;
@@ -144,22 +155,35 @@ if (params) {
 	if(params.no_acao.trim()  !== '' ){
 		if (where != "") where += " and ";
 		if (params.sharp) { 
-			 where +=  `UPPERCASE(arker.arker.no_acao) = '${params.no_acao}' `;
+			 where +=  `arker.no_acao = '${params.no_acao}' `;
 		} else 
 		{
-			where += `UPPERCASE(arker.arker.no_acao) like '%${params.no_acao.trim()}%' `;
+			where += `arker.no_acao like '%${params.no_acao.trim()}%' `;
 		}
 	}
 	
 	if(params.no_acordo.trim()  !== '' ){
 		if (where != "") where += " and ";
 	    if (params.sharp) { 
-			 where +=  `UPPERCASE(arker.arker.no_acordo) = '${params.no_acordo}' `;
+			 where +=  `arker.no_acordo = '${params.no_acordo}' `;
 		} else 
 		{
-			where += `UPPERCASE(arker.arker.no_acordo) like '%${params.no_acordo.trim()}%' `;
+			where += `arker.no_acordo like '%${params.no_acordo.trim()}%' `;
 		}
 	}
+
+	if(params.no_grupo.trim()  !== '' ){
+		if (where != "") where += " and ";
+	    if (params.sharp) { 
+			 where +=  `arker.no_grupo = '${params.no_grupo}' `;
+		} else 
+		{
+			where += `arker.no_grupo like '%${params.no_grupo.trim()}%' `;
+		}
+	}
+
+
+
 	if(params.data_lancamento.trim()  !== '' ){
 		if (where != "") where += " and ";
 	    where +=  `arker.data_lancamento = '${shared.formatDateYYYYMMDD(params.data_lancamento)}' `;
@@ -219,13 +243,42 @@ if (params) {
 		if (where != "") where += " and ";
 		where +=  `arker.denominacao_bloqueio = '${params.denominacao_bloqueio}' `;
 	}
+
+	if(params.status_arquivos.trim()  !== '' ){
+		if (where != "") where += " and ";
+		if (params.sharp) { 
+			where +=  `arker.status_arquivos = '${params.status_arquivos}' `;
+		} else 
+		{
+			where += `arker.status_arquivos like '%${params.status_arquivos.trim()}%' `;
+		}
+	}
+	if(params.status_assinatura.trim()  !== 'F' ){
+		if (where != "") where += " and ";
+		if (params.status_assinatura == 'X'){
+			where += `ass.id_empresa is null `;
+		} else if (params.status_assinatura == 'V'){
+			where += `ass.id_empresa is not null `;	
+		} else {
+			where += `trim(ass.resposta)  = '${params.status_assinatura.trim()}' `;   
+		}
+	}
+	if (params.obs_assinatura !== 'SEM FILTRO') {
+		if (where != "") where += " and ";
+		where += `trim(ass.obs)  like '%${params.obs_assinatura.trim()}%' `;
+	}
+
+
+
+
 	if (where != "") where = " where " + where;
 	 if (params.pagina != 0) {
 		paginacao = `limit ${params.tamPagina} offset((${params.pagina} -1) * ${params.tamPagina})`;
 	}
 	if (params.contador == 'S') {
 		sqlStr = `SELECT COALESCE(COUNT(*),0) as total
-				  FROM arkers arker      
+				  FROM arkers arker  
+				  left join assinaturas ass on ass.id_empresa = arker.id_empresa and ass.id_arker = arker.id    
 				  ${ where} `;
 		return db.one(sqlStr);
 	}  else {
@@ -282,7 +335,11 @@ if (params) {
 			,  arker.status_assinatura as  status_assinatura  
 			,  arker.user_insert as  user_insert  
 			,  arker.user_update as  user_update     
+		    ,  coalesce(ass.resposta,'')    as ass_resposta
+            ,  coalesce(ass.obs,'')            as ass_obs
+			,  coalesce(ass.upload_cliente,'')      as ass_upload_cliente
 			from arkers arker      
+            left join assinaturas ass on ass.id_empresa = arker.id_empresa and ass.id_arker = arker.id
 			${where} 			${ orderby} ${ paginacao} `;
 			console.log("strsql",strSql);
 			return  db.manyOrNone(strSql);
