@@ -134,7 +134,8 @@ catch (err)
 router.post("/sim_historicos",async function(req, res) {
 /*
 	{
-	  "id_empresa":0,   id: "",
+	  "id_empresa":0,  
+	  id: "",
       codemp: "",
       numpro: "",
       cod_cli_sim: "",

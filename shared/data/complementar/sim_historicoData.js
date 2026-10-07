@@ -266,6 +266,12 @@ exports.getSim_Assi_Sintetico = function(params) {
                 where += `sim.possuipagtoliberado = 0 `;
             }
         }
+        if (params.datini && params.datini !== -1) {
+            if (where != "") where += " and ";
+            const ano = params.datini.split("/")[1];
+            where += `to_char(sim.datini,'YYYY') = '${ano}' `;
+           
+        }
         if (where != "") where += " and ";
         where += `sim.status_arquivos = '1' `;
 

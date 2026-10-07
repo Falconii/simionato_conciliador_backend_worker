@@ -7,8 +7,8 @@ const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
 
-// Caminho da pasta
-const baseDir = "D:\\Anexo ASF Fernanda - 2020";
+// Caminho da pasta sem o ano
+baseDir = "D:\\Anexo ASF Fernanda - ";
 
 // -----------------------------
 // 🔹 Definição dos parâmetros CLI
@@ -91,6 +91,12 @@ async function enviarArrayParaGoogleDrive(arquivos, id_sim) {
 // -----------------------------
 async function iniciar() {
 
+    const ano = opts.tri.substring(0,4);
+
+    baseDir = baseDir + ano;
+
+    baseDir = "D:\\Anexos Faltantes"
+
     const ok = await confirmarParametros();
     if (!ok) {
         console.log("❌ Execução cancelada pelo usuário.");
@@ -106,7 +112,8 @@ async function iniciar() {
     let contador = 0;
 
     try {
-        const sims = await simUploadSrv.getSims({
+
+       /*  const sims = await simUploadSrv.getSims({
             id_empresa: 1,
             datini: opts.data,
             modoas: "Ação Pontual",
@@ -118,6 +125,23 @@ async function iniciar() {
             pagina: 0,
             orderby: "000003"
         });
+ */
+        const sims = await simUploadSrv.getSims({
+            id_empresa: 1,
+            datini: '',
+            modoas: "Ação Pontual",
+            descrpasso: "Aprovada",
+            id: 0,
+            status_arquivos: opts.status,
+            trimestre: '',
+            ano: ano,
+            tamPagina: 700,
+            pagina: 0,
+            orderby: "000003"
+        });
+
+ 
+
 
         if (sims.length === 0) {
             console.log("⚠️ Nenhum Dado No Banco Para Processar");
@@ -135,7 +159,7 @@ async function iniciar() {
             for (const sim of sims) {
                 contador++;
                 const prefixo = `${sim.codemp}-${sim.numpro}`;
-                const encontrados = arquivos.filter(nome => nome.startsWith(prefixo));
+                const encontrados = arquivos.filter(nome => nome.split("-")[0] === sim.codemp && nome.split("-")[1] === sim.numpro);
 
                 console.log(`${contador} -> ${sim.codemp}-${sim.numpro} id: ${sim.id}`);
 
@@ -155,7 +179,7 @@ async function iniciar() {
 
             for (const sim of sims) {
                 const prefixo = `${sim.codemp}-${sim.numpro}`;
-                const encontrados = arquivos.filter(nome => nome.startsWith(prefixo));
+                const encontrados = arquivos.filter(nome => nome.split("-")[0] === sim.codemp && nome.split("-")[1] === sim.numpro);
                 if (encontrados.length > 0) {
                     docs = [];
                     try {
@@ -197,7 +221,7 @@ async function iniciar() {
 
             for (const sim of sims) {
                 const prefixo = `${sim.codemp}-${sim.numpro}`;
-                const encontrados = arquivos.filter(nome => nome.startsWith(prefixo));
+                const encontrados = arquivos.filter(nome => nome.split("-")[0] === sim.codemp && nome.split("-")[1] === sim.numpro);
 
                 console.log(`${sim.codemp}-${sim.numpro} id: ${sim.id}`);
 

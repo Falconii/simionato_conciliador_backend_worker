@@ -37,6 +37,24 @@ exports.formatDateYYYYMMDD = function(date) {
     }
 };
 
+
+exports.getYYYY = function(date) {
+    if (date == null) {
+        return "0000";
+    }
+    if (typeof date === "string") {
+        if (date.trim().length == 0) {
+            return "0000";
+        }
+        if (date.length > 10) date = date.substring(0, 10);
+        date = date.split("/");
+        return date[2];
+    } else {
+        return "0000"    
+    }
+};
+
+
 exports.IfNUllNoAspas = function(date) {
     if (date == "null") return "null";
 

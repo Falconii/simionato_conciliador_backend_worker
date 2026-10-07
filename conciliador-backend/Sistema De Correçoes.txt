@@ -1,0 +1,5 @@
+Chamados mapeados
+
+- Exclusão de arquivos
+- Diferença de documento e acordos aceita
+- 

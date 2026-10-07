@@ -166,7 +166,12 @@ if (params) {
 				}
 				if(params.datini.trim()  !== ''){
 					if (where != "") where += " and ";
-					where +=  `sim.datini = '${shared.formatDateYYYYMMDD('01/'+params.datini)}'`;
+					if (params.datini.substr(0,2) == '00') {
+						const ano = params.datini.split('/')[1]; 
+				      	where +=  `to_char(sim.datini,'YYYY') = '${ano}' `;
+					} else {
+					    where +=  `sim.datini = '${shared.formatDateYYYYMMDD('01/'+params.datini)}'`;
+					}
 				}
 				if(params.id_contrato  !== 0 ){
 					if (where != "") where += " and "; 
@@ -185,6 +190,8 @@ if (params) {
 					if (where != "") where += " and ";
 					if (params.status_assinatura == 'X'){
 						where += `ass.id_empresa is null `;
+					} else if (params.status_assinatura == 'V'){
+						where += `ass.id_empresa is not null `;	
 					} else {
 						where += `trim(ass.resposta)  = '${params.status_assinatura.trim()}' `;   
 					}
@@ -221,7 +228,10 @@ if (params) {
                    if (where != "") where += " and ";
 				   where += `get_ano_trimestre(sim.datini)  = '${params.trimestre}' `;
 				}
-
+                if (params.datini && params.datini !== ''){
+                   if (where != "") where += " and ";
+				   where += `to_char(sim.datini, 'YYYY')  = '${ano}' `;
+				}
 				if (where != "") where = " where " + where;
 				if (params.pagina != 0) {
 					paginacao = `limit ${params.tamPagina} offset((${params.pagina} -1) * ${params.tamPagina})`;
@@ -231,7 +241,7 @@ if (params) {
 		  throw new error(err)
     }
 	if (params.contador == 'S') {
-		sqlStr = `SELECT COALESCE(COUNT(*),0) as total 
+		sqlStr = `SELECT COALESCE(COUNT(*),0)::INT4 as total 
 				  FROM sim_historicos sim      
 				  left join assinaturas ass on ass.id_empresa = sim.id_empresa and ass.id_sim = sim.id
 				  ${ where} `;
