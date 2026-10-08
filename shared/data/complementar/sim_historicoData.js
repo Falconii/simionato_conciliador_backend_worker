@@ -232,6 +232,14 @@ exports.getSim_Assi_Sintetico = function(params) {
             where += `sim.id_empresa = ${params.id_empresa} `;
         }
 
+
+        if (where != "") where += " and ";
+        where += `trim(sim.descrpasso)  = 'Aprovada' `;
+
+        if (where != "") where += " and ";
+        where += `trim(sim.modoas)  = 'Ação Pontual' `;
+
+
         if (params.id !== 0) {
             if (where != "") where += " and ";
             where += `sim.id = ${params.id} `;
