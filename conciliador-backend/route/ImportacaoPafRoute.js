@@ -156,6 +156,9 @@ router.post(
     async function(req, res) {
         const file = req.file;
 
+
+        const originalName = shared.fixFileNameEncoding(file.originalname);
+
         console.log("📥 [Upload Email] Iniciando processamento...");
         try {
             // Validação
@@ -200,7 +203,7 @@ router.post(
                 id_file: "",
                 file_name: "",
                 origem: "EMAIL",
-                file_name_original: file.originalname,
+                file_name_original: originalName,
                 status_upload: "",
                 id_origem: id_pst_anexo,
                 pagina: 0,
@@ -232,10 +235,10 @@ router.post(
                     id_file: "",
                     file_name: `${id_empresa.toString().padStart(2, "0")}_${id_pst_anexo
             .toString()
-            .padStart(6, "0")}_${file.originalname}`,
+            .padStart(6, "0")}_${originalName}`,
                     id_origem: id_pst_anexo,
                     origem: "EMAIL",
-                    file_name_original: file.originalname,
+                    file_name_original:originalName,
                     status_upload: "0",
                     user_insert: id_usuario,
                     user_update: 0,
@@ -247,7 +250,7 @@ router.post(
 
             const nomeOriginal =  `${id_empresa.toString().padStart(2, "0")}_${id_pst_anexo.toString().padStart(6, "0")}_${file.originalname}`;
 
-            const nomeUTF8 = Buffer.from(nomeOriginal, "utf8").toString();
+            const nomeUTF8 = Buffer.from(originalName, "utf8").toString();
 
             const resposta = await dbController.processaUploadDocumentos(
                 file,

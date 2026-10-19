@@ -35,6 +35,7 @@ const getPsts_Anexos = async function(filtro = {}) {
 
         return response.data;
     } catch (error) {
+        //console.log("erro:",error);
         throw error;
     }
 };

@@ -141,7 +141,7 @@ exports.getPsts_Anexos = function(params) {
             paginacao = `limit ${params.tamPagina} offset((${params.pagina} -1) * ${params.tamPagina})`;
         }
         if (params.contador == "S") {
-            sqlStr = `SELECT COALESCE(COUNT(*),0) as total 
+            sqlStr = `SELECT COALESCE(COUNT(*),0):: int4 as total 
 				  FROM psts_anexos pst_anexo   
 				 left join paf_det paf_det on paf_det.id_empresa = pst_anexo.id_empresa and paf_det.id = pst_anexo.id_pafs_det   
 				  ${where} `;
@@ -164,8 +164,8 @@ exports.getPsts_Anexos = function(params) {
 			,  pst_anexo.caminho_anexo as  caminho_anexo  
 			,  pst_anexo.pasta_acordo as  pasta_acordo  
 			,  pst_anexo.tamanho_anexo_bytes as  tamanho_anexo_bytes  
-			, to_char(pst_anexo.data_criacao, 'YYYY-MM-DD HH24:MI GMT-0300') as data_criacao  
-			, to_char(pst_anexo.data_atualizacao, 'YYYY-MM-DD HH24:MI GMT-0300') as data_atualizacao  
+			,  to_char(pst_anexo.data_criacao, 'YYYY-MM-DD HH24:MI GMT-0300') as data_criacao  
+			,  to_char(pst_anexo.data_atualizacao, 'YYYY-MM-DD HH24:MI GMT-0300') as data_atualizacao  
 			,  pst_anexo.status_arquivos as  status_arquivos  
 			,  pst_anexo.status_assinatura as  status_assinatura  
 			,  pst_anexo.user_insert as  user_insert  

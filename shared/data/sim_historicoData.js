@@ -241,6 +241,7 @@ if (params) {
 				  FROM sim_historicos sim      
 				  left join assinaturas ass on ass.id_empresa = sim.id_empresa and ass.id_sim = sim.id
 				  ${ where} `;
+	    console.log("getSim_Historicos contador",sqlStr);			  
 		return db.one(sqlStr);
 	}  else {
 		strSql = `select   

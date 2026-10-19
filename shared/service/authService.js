@@ -31,7 +31,7 @@ async function login(id_usuario,senha) {
         console.log("Login realizado com sucesso");
         return token;
     } catch (error) {
-        console.error("Erro ao fazer login:", error);
+        //console.error("Erro ao fazer login:", error);
         throw error;
     }
 }
