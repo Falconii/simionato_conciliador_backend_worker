@@ -1,5 +1,5 @@
 const { api } = require("./authService");
-const pst_anexoService = require("./authService");
+const pst_anexoService = require("./pst_anexoService");
 
 const FormData = require("form-data");
 const fs = require("fs");
@@ -40,6 +40,22 @@ const getPsts_Anexos = async function(filtro = {}) {
     }
 };
 
+const updatePsts_Anexos = async function(anexo) {
+    try {
+        const body = anexo;
+
+        const response = await api.put("/pst_anexo", body);
+        // como o api já tem o Authorization configurado pelo login,
+        // não precisa repetir o header aqui
+
+        return response.data;
+    } catch (error) {
+        //console.log("erro:",error);
+        throw error;
+    }
+};
+
+
 async function uploadArquivoEmail(caminhoArquivo, id_pst_anexo) {
     try {
         const form = new FormData();
@@ -63,4 +79,5 @@ async function uploadArquivoEmail(caminhoArquivo, id_pst_anexo) {
 module.exports = {
     getPsts_Anexos,
     uploadArquivoEmail,
+    updatePsts_Anexos
 };

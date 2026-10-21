@@ -130,7 +130,7 @@ catch (err)
 	}
 })
 /* ROTA CONSULTA POST cab_correcao */
-router.post("/cab_correcoes",async function(req, res) {
+router.post("/cabcorrecoes",async function(req, res) {
 /*
 	{
 		"id_empresa":0,

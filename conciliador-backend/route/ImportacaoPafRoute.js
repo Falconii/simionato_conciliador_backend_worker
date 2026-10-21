@@ -156,9 +156,6 @@ router.post(
     async function(req, res) {
         const file = req.file;
 
-
-        const originalName = shared.fixFileNameEncoding(file.originalname);
-
         console.log("📥 [Upload Email] Iniciando processamento...");
         try {
             // Validação
@@ -187,6 +184,8 @@ router.post(
             if (camposAusentes.length > 0) {
                 return response.validationError(res, camposAusentes);
             }
+
+            const originalName = shared.fixFileNameEncoding(file.originalname);
 
             const id_empresa = req.id_empresa;
             const id_usuario = req.id_usuario;
@@ -248,9 +247,9 @@ router.post(
             }
             console.log("g_doc após insert ou update", g_doc);
 
-            const nomeOriginal =  `${id_empresa.toString().padStart(2, "0")}_${id_pst_anexo.toString().padStart(6, "0")}_${file.originalname}`;
+            const nomeDrive = `${id_empresa.toString().padStart(2, "0")}_${id_pst_anexo.toString().padStart(6, "0")}_${originalName}`;
 
-            const nomeUTF8 = Buffer.from(originalName, "utf8").toString();
+            const nomeUTF8 = Buffer.from(nomeDrive, "utf8").toString();
 
             const resposta = await dbController.processaUploadDocumentos(
                 file,
@@ -266,6 +265,11 @@ router.post(
                 console.log("indo para gravação", g_doc);
                 g_doc = await doc_gdriveSrv.updateDoc_Gdrive(g_doc);
                 res.status(200).json(resposta.data);
+            } else if (resposta.error && resposta.error.includes("Já Existe")) {
+                res.status(200).json({
+                    jaExiste: true,
+                    message: "Arquivo já existe no Google Drive.",
+                });
             } else {
                 response.error(
                     res,
@@ -283,14 +287,14 @@ router.post(
                 });
             }
         } finally {
-            /*
-                                                                                                      try {
-                                                                                                        await fs.unlink(file.path);
-                                                                                                        console.log("Arquivo removido:", file.path);
-                                                                                                      } catch (err) {
-                                                                                                        console.error("Erro ao remover arquivo:", file.path, err);
-                                                                                                      }
-                                                                                                        */
+            if (file) {
+                try {
+                    await fs.promises.unlink(file.path);
+                    console.log("Arquivo removido:", file.path);
+                } catch (err) {
+                    console.error("Erro ao remover arquivo:", file.path, err);
+                }
+            }
         }
     },
 );

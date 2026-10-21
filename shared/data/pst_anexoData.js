@@ -88,6 +88,14 @@ exports.getPsts_Anexos = function(params) {
             if (where != "") where += " and ";
             where += `pst_anexo.id = ${params.id} `;
         }
+        if (params.id_inicial) {
+            if (where != "") where += " and ";
+            where += `pst_anexo.id >= ${Number(params.id_inicial)} `;
+        }
+        if (params.id_final) {
+            if (where != "") where += " and ";
+            where += `pst_anexo.id <= ${Number(params.id_final)} `;
+        }
         if (params.id_email_pst !== 0) {
             if (where != "") where += " and ";
             where += `pst_anexo.id_email_pst = ${params.id_email_pst} `;
@@ -135,6 +143,10 @@ exports.getPsts_Anexos = function(params) {
             } else {
                 where += `pst_anexo.status_assinatura like '%${params.status_assinatura.trim()}%' `;
             }
+        }
+		if (params.id_inicial !== 0) {
+            if (where != "") where += " and ";
+            where += `pst_anexo.id >= ${params.id_inicial} and pst_anexo.id <= ${params.id_final} `;
         }
         if (where != "") where = " where " + where;
         if (params.pagina != 0) {

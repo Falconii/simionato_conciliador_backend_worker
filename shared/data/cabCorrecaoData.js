@@ -16,19 +16,19 @@ const camposSelect = `
 			,  cab_correcao.status as status
 			,  cab_correcao.user_insert as user_insert
 			,  cab_correcao.user_update as user_update
-			,  exec.razao as exec_nome
-			,  exec.email as exec_email
-			,  coalesce(sol.razao,'') as sol_nome
-			,  coalesce(sol.email,'') as sol_email
-			,  sim.codemp as sim_cod_emp
-			,  sim.numpro as sim_num_pro `;
+			,  coalesce(exec.razao,'')  as exec_nome
+			,  coalesce(exec.email,'') as exec_email
+			,  coalesce(sol.razao,'')  as sol_nome
+			,  coalesce(sol.email,'')  as sol_email
+			,  coalesce(sim.codemp,0) as sim_cod_emp
+			,  coalesce(sim.numpro,0) as sim_num_pro `;
 
 /* FROM + JOIN compartilhado pelas consultas */
 const fromCab = ` from cab_correcoes cab_correcao
-			inner join usuarios exec on cab_correcao.id_empresa = exec.id_empresa and cab_correcao.id_exec = exec.id
-			left join usuarios sol on cab_correcao.id_empresa = sol.id_empresa and cab_correcao.id_sol = sol.id
-			inner join sim_historicos sim on cab_correcao.id_empresa = sim.id_empresa and cab_correcao.id_origem = sim.id and cab_correcao.origem = 'SIM' `;
-
+			inner join  usuarios sol on cab_correcao.id_empresa = sol.id_empresa and cab_correcao.id_sol = sol.id
+			left  join  usuarios exec on cab_correcao.id_empresa = exec.id_empresa and cab_correcao.id_exec = exec.id
+			left  join  sim_historicos sim on cab_correcao.id_empresa = sim.id_empresa and cab_correcao.id_origem = sim.id and cab_correcao.origem = 'SIM' 
+		`;
 /* ORDENAÇÃO permitida (whitelist): só estas chaves chegam ao SQL */
 const ORDENACAO = {
 	'': 'cab_correcao.id_empresa,cab_correcao.id',

@@ -141,6 +141,8 @@ router.post("/psts_anexos",async function(req, res) {
 		"assunto_email":"", 
 		"status_arquivos":"", 
 		"status_assinatura":"", 
+		"id_inicial":0,
+		"id_final":0,
 		"pagina":0, 
 		"tamPagina":50, 
 		"contador":"N", 
