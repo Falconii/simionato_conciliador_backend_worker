@@ -13,6 +13,10 @@ exports.getCabCorrecao = async function(id_empresa,id){
 exports.getCabCorrecoes = async function(params){
 	return cabCorrecaoData.getCabCorrecoes(params);
 };
+/* RESUMO EXECUTOR/SOLICITANTE SERVICE */
+exports.getResumoExecutorSolicitante = async function(params){
+	return cabCorrecaoData.getResumoExecutorSolicitante(params || {});
+};
 //* CRUD - INSERT - SERVICE */
 exports.insertCabCorrecao = async function(cab){
 try

@@ -175,5 +175,40 @@ catch (err)
 		}
 	}
 })
+/* ROTA RESUMO POST cab_correcao por solicitante/executor */
+router.post("/resumoexecutorsolicitante",async function(req, res) {
+/*
+	{
+		"id_empresa":0,
+		"id_solicitante":0,
+		"id_executor":0,
+		"foco":"",   // SOLICITANTE ou EXECUTOR
+		"orderby":"" // 000001 = id, 000002 = nome (padrão)
+	}
+*/
+try
+	{
+		const lsRegistros = await cabCorrecaoSrv.getResumoExecutorSolicitante(req.body);
+		if (lsRegistros.length == 0)
+		{
+			res.status(409).json({ message: 'Correção Nenhum Registro Encontrado!' });
+		}
+		else
+		{
+			res.status(200).json(lsRegistros);
+		}
+}
+catch (err)
+	{
+		if(err.name == 'MyExceptionDB')
+		{
+			res.status(409).json(err);
+		}
+		else
+		{
+			res.status(500).json({ erro: 'BAK-END', tabela: 'cab_correcao', message: err.message });
+		}
+	}
+})
 
 module.exports = router;

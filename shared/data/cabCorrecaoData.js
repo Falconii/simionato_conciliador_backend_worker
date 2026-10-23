@@ -14,6 +14,8 @@ const camposSelect = `
 			,  cab_correcao.id_sol as id_sol
 			,  cab_correcao.tarefa as tarefa
 			,  cab_correcao.status as status
+			,  cab_correcao.status_assinatura_cliente as status_assinatura_cliente
+			,  cab_correcao.status_assinatura_gp as status_assinatura_gp
 			,  cab_correcao.user_insert as user_insert
 			,  cab_correcao.user_update as user_update
 			,  coalesce(exec.razao,'')  as exec_nome
@@ -35,7 +37,9 @@ const ORDENACAO = {
 	'000001': 'cab_correcao.id_empresa,cab_correcao.id',
 	'000002': 'cab_correcao.id_empresa,cab_correcao.descricao',
 	'000003': 'cab_correcao.id_empresa,cab_correcao.cadastr',
-	'000004': 'cab_correcao.id_empresa,cab_correcao.status'
+	'000004': 'cab_correcao.id_empresa,cab_correcao.status',
+	'000005': 'cab_correcao.id_empresa,sol.razao,cab_correcao.id',
+	'000006': 'cab_correcao.id_empresa,exec.razao,cab_correcao.id'
 };
 
 /* Converte para inteiro; se não for número inteiro, vai 0 */
@@ -74,6 +78,8 @@ return [
 			CabCorrecao.id_sol,
 			CabCorrecao.tarefa,
 			CabCorrecao.status,
+			CabCorrecao.status_assinatura_cliente,
+			CabCorrecao.status_assinatura_gp,
 			CabCorrecao.user_insert,
 			CabCorrecao.user_update,
  ];
@@ -83,6 +89,42 @@ exports.getCabCorrecao = function(id_empresa,id){
 	const strSql = `select ${camposSelect} ${fromCab}
 			 where cab_correcao.id_empresa = $1 and cab_correcao.id = $2 `;
 	return db.oneOrNone(strSql, [id_empresa, id]);
+};
+/* RESUMO de correções por solicitante ou executor (foco) */
+exports.getResumoExecutorSolicitante = function(params){
+	const condicoes = [];
+	const valores = [];
+
+	condicaoNumero('cab_correcao.id_empresa', params.id_empresa, condicoes, valores);
+	condicaoNumero('cab_correcao.id_sol', params.id_solicitante, condicoes, valores);
+	condicaoNumero('cab_correcao.id_exec', params.id_executor, condicoes, valores);
+
+	const executor = String(params.foco ?? '').trim().toUpperCase() === 'EXECUTOR';
+	const colId = executor ? 'cab_correcao.id_exec' : 'cab_correcao.id_sol';
+	const colNome = executor ? 'exec.razao' : 'sol.razao';
+
+	/* sem executor atribuído não há o que resumir */
+	if (executor) condicoes.push('cab_correcao.id_exec <> 0');
+
+	const where = condicoes.length > 0 ? " where " + condicoes.join(" and ") : "";
+
+	/* ORDENAÇÃO permitida (whitelist): '000001' = id, '000002' ou vazio = nome */
+	const nomeSql = `coalesce(${colNome},'')`;
+	const ordenacaoResumo = {
+		'': `${nomeSql}, ${colId}`,
+		'000001': `${colId}`,
+		'000002': `${nomeSql}, ${colId}`
+	};
+	const orderbySql = Object.hasOwn(ordenacaoResumo, params.orderby) ? ordenacaoResumo[params.orderby] : ordenacaoResumo[''];
+
+	const strSql = `select ${colId} as id
+				,  ${nomeSql} as nome
+				,  count(*)::int4 as total
+			${fromCab}
+			${where}
+			group by ${colId}, ${nomeSql}
+			order by ${orderbySql} `;
+	return db.manyOrNone(strSql, valores);
 };
 /* CRUD GET ALL*/
 exports.getCabCorrecoes = function(params){
@@ -156,11 +198,13 @@ exports.insertCabCorrecao = function(cab){
             id_sol,
             tarefa,
             status,
+            status_assinatura_cliente,
+            status_assinatura_gp,
             user_insert,
             user_update
         )
         values (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
         )
         returning *;
     `;
@@ -175,6 +219,8 @@ exports.insertCabCorrecao = function(cab){
         cab.id_sol,
         cab.tarefa,
         cab.status,
+        cab.status_assinatura_cliente,
+        cab.status_assinatura_gp,
         cab.user_insert,
         cab.user_update
     ];
@@ -194,8 +240,10 @@ exports.updateCabCorrecao = function(cab){
 	 		 ,   id_sol = $6
 	 		 ,   tarefa = $7
 	 		 ,   status = $8
-	 		 ,   user_update = $9
-	 		 where id_empresa = $10 and  id = $11  returning * `;
+	 		 ,   status_assinatura_cliente = $9
+	 		 ,   status_assinatura_gp = $10
+	 		 ,   user_update = $11
+	 		 where id_empresa = $12 and  id = $13  returning * `;
 	const valores = [
 		cab.descricao,
 		shared.formatDateYYYYMMDD(cab.cadastr),
@@ -205,6 +253,8 @@ exports.updateCabCorrecao = function(cab){
 		cab.id_sol,
 		cab.tarefa,
 		cab.status,
+		cab.status_assinatura_cliente,
+		cab.status_assinatura_gp,
 		cab.user_update,
 		cab.id_empresa,
 		cab.id

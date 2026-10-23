@@ -64,9 +64,11 @@ async function iniciar() {
 
         
 
+        const totalFaixa = opts.id_final - opts.id_inicial + 1;
+
         for (const item of emails) {
 
-            console.log("🔍 Processando anexo:", item.id);
+            console.log(`🔍 Processando arquivo ${item.id - opts.id_inicial + 1}/${totalFaixa} (anexo ${item.id})`);
 
             if (!item.pasta_acordo || !item.nome_anexo_salvo) {
                 console.log("⚠️ Registro sem pasta_acordo/nome_anexo_salvo:", item.id);

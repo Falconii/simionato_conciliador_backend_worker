@@ -5864,6 +5864,24 @@
                             "validacao": []
                         },
                         {
+                            "name": "status_assinatura_cliente",
+                            "type": "char",
+                            "length": 1,
+                            "precision": 0,
+                            "nulo": "N",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
+                            "name": "status_assinatura_gp",
+                            "type": "char",
+                            "length": 1,
+                            "precision": 0,
+                            "nulo": "N",
+                            "padrao": "",
+                            "validacao": []
+                        },
+                        {
                             "name": "user_insert",
                             "type": "int4",
                             "length": 0,
