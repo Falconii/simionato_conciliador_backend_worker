@@ -67,6 +67,7 @@ app.use("/api/importacaoarker", require("./route/ImportacaoArkerRoute.js"));
 app.use("/api/contrato_cab", require("./route/contrato_cabRoute.js"));
 app.use("/api/contrato_det", require("./route/contrato_detRoute.js"));
 app.use("/api/assinatura", require("./route/assinaturaRoute.js"));
+app.use("/api/emailcorrecao", require("./route/emailcorrecaoRoute.js"))
 
 app.use(
   "/api/contrato_det/complementar",

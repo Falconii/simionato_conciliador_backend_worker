@@ -615,8 +615,6 @@ exports.preparaEmailNovaSenha = async function (id_empresa, id_usuario) {
   await exports.enviarEmailNovaSenha(usuario, token);
 };
 
-
-
 exports.enviarEmailRelatorioEvento = async function (usuario, owner, arquivo) {
 
   const destinatario = usuario.email;
@@ -716,4 +714,159 @@ exports.preparaEmailRelatorioEvento = async function (usuario,owner, arquivo) {
 
   return  await exports.enviarEmailRelatorioEvento(usuario,owner,arquivo);
 
+};
+
+/* ======== ACEITE DE CORREÇÃO ======== */
+
+/* o texto vem do usuário (descrição, mensagens), então é escapado antes de ir para o HTML */
+function escapaHtml(valor) {
+  return String(valor ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/* mesmos textos de situacoesCorrecao e statusAssinaturaCorrecao do front */
+const SITUACAO_CORRECAO = {
+  "0": "Não Enviado",
+  "1": "Aguardando Executor",
+  "2": "Em Andamento",
+  "3": "Correção Aceita - Aguardando Ação",
+  "9": "Encerrada",
+};
+
+function textoAssinatura(sigla) {
+  if (!sigla || !String(sigla).trim()) return "-";
+  return sigla === "S" ? "OK" : "Falta Assinatura";
+}
+
+/* link para abrir o sistema: APP_URL ou app_url.txt, como nas outras funções */
+function urlSistema() {
+  try {
+    if (process.env.APP_URL) return process.env.APP_URL;
+    return fs.readFileSync("./app_url.txt", "utf8").trim();
+  } catch (erro) {
+    return "";
+  }
+}
+
+function htmlAceiteCorrecao(usuario, cabCorrecao, detalhes) {
+  const url = urlSistema();
+
+  const mensagens = detalhes
+    .map(
+      (d) => `
+      <tr>
+        <td style="border:1px solid #ddd; padding:8px; font-size:14px;">
+          <strong>${escapaHtml(d.data)}</strong> - ${escapaHtml(d.exec_nome)}<br>
+          <span style="white-space:pre-wrap;">${escapaHtml(d.mensagem)}</span>
+        </td>
+      </tr>`,
+    )
+    .join("");
+
+  const blocoMensagens = detalhes.length
+    ? `<h3 style="margin:20px 0 8px 0; color:#333;">Mensagens</h3>
+       <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${mensagens}</table>`
+    : "";
+
+  const botao = url
+    ? `<p style="text-align:center; margin-top:30px;">
+         <a href="${escapaHtml(url)}" style="padding:14px 26px; border-radius:6px; text-decoration:none;
+            font-size:16px; font-weight:bold; background-color:#28a745; color:#ffffff;">
+           ACESSAR O SISTEMA
+         </a>
+       </p>`
+    : "";
+
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Aceite de Correção</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f4f4; font-family:Arial, Helvetica, sans-serif;">
+  <div style="max-width:640px; margin:20px auto; background-color:#ffffff; border-radius:6px;
+              border:1px solid #e0e0e0; padding:20px 24px;">
+
+    <h1 style="font-size:20px; margin:0 0 16px 0; color:#333333;">Aceite de Correção</h1>
+
+    <p>${escapaHtml(usuario.razao)},</p>
+    <p>Foi incluída uma correção que aguarda aceite. Segue o resumo:</p>
+
+    <table width="100%" cellpadding="8" cellspacing="0" style="font-size:14px; border-collapse:collapse;">
+      <tr style="background:#eef3fb;">
+        <td width="50%" style="border:1px solid #ddd;"><strong>Código:</strong><br>${escapaHtml(cabCorrecao.id)}</td>
+        <td width="50%" style="border:1px solid #ddd;"><strong>Situação:</strong><br>${escapaHtml(SITUACAO_CORRECAO[cabCorrecao.status] ?? "")}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #ddd;"><strong>Origem:</strong><br>${escapaHtml(cabCorrecao.origem)} - ${escapaHtml(cabCorrecao.id_origem)}</td>
+        <td style="border:1px solid #ddd;"><strong>Data:</strong><br>${escapaHtml(cabCorrecao.cadastr)}</td>
+      </tr>
+      <tr style="background:#eef3fb;">
+        <td colspan="2" style="border:1px solid #ddd;"><strong>Descrição:</strong><br>${escapaHtml(cabCorrecao.descricao)}</td>
+      </tr>
+      <tr>
+        <td colspan="2" style="border:1px solid #ddd;"><strong>Tarefa:</strong><br>${escapaHtml(cabCorrecao.tarefa)}</td>
+      </tr>
+      <tr style="background:#eef3fb;">
+        <td style="border:1px solid #ddd;"><strong>Solicitante:</strong><br>${escapaHtml(cabCorrecao.sol_nome)}</td>
+        <td style="border:1px solid #ddd;"><strong>Executor:</strong><br>${escapaHtml(cabCorrecao.exec_nome) || "-"}</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #ddd;"><strong>Assinatura GP:</strong><br>${textoAssinatura(cabCorrecao.status_assinatura_gp)}</td>
+        <td style="border:1px solid #ddd;"><strong>Assinatura Cliente:</strong><br>${textoAssinatura(cabCorrecao.status_assinatura_cliente)}</td>
+      </tr>
+    </table>
+
+    ${blocoMensagens}
+    ${botao}
+
+    <p style="margin-top:24px; font-size:12px; color:#888888; text-align:center;">
+      Este e-mail foi gerado automaticamente pelo sistema.<br>
+      Por favor, não responda diretamente a esta mensagem.
+    </p>
+  </div>
+</body>
+</html>`;
+}
+
+/* destinatário inicial: e-mail do solicitante da correção */
+exports.enviarEmailAceiteCorrecao = async function (usuario, cabCorrecao, detalhe) {
+  const destinatario = cabCorrecao.sol_email || usuario.email;
+
+  if (!destinatario) {
+    return { message: "Falha: Solicitante Sem E-Mail Cadastrado!" };
+  }
+
+  /* detalhe pode vir como um objeto ou como uma lista de mensagens */
+  const detalhes = Array.isArray(detalhe) ? detalhe : detalhe ? [detalhe] : [];
+
+  try {
+    /* montado dentro do try: um erro aqui não pode virar rejeição sem tratamento */
+    const html = htmlAceiteCorrecao(usuario, cabCorrecao, detalhes);
+
+    const resposta = await resend.emails.send({
+      from: "Sistema <notificacoes@falconi-iot.com.br>",
+      to: destinatario,
+      subject: `Aceite de Correção - ${cabCorrecao.descricao}`,
+      html: html,
+    });
+
+    console.log("Email enviado:", resposta);
+
+    if (resposta.error) {
+      return { message: `Falha: ${resposta.error.message}` };
+    }
+    return { message: "E-Mail Enviado Com Sucesso!" };
+  } catch (erro) {
+    console.error("Erro ao enviar email:", erro);
+    return { message: "Falha Ao Enviar E-Mail!" };
+  }
+};
+
+exports.PreparaEmailAceiteCorrecao = async function (usuario, cabCorrecao, detalhe) {
+  return await exports.enviarEmailAceiteCorrecao(usuario, cabCorrecao, detalhe);
 };

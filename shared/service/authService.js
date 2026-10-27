@@ -11,7 +11,7 @@ const credenciais = JSON.parse(
 );
 
 const api = axios.create({
-    baseURL: "http://localhost:3000/api/",
+    baseURL: "https://backend-v2-production-c641.up.railway.app/api",
     timeout: 30000,
 });
 

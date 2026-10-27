@@ -52,12 +52,12 @@ async function iniciar() {
         const emails = await emailService.getPsts_Anexos({
             id_empresa: 1,
             id: 0,
-            id_inicial: 0,
-            id_final: 0,
+            id_inicial: opts.id_inicial,
+            id_final: opts.id_final,
             acordo: "",
             status_arquivos: "0",
             pagina: 1,
-            tamPagina: 200,
+            tamPagina: 1000,
         });
 
         console.log("total de e-mail emails: ",emails.length);
@@ -78,7 +78,11 @@ async function iniciar() {
             if (!extensaoPermitida(item.nome_anexo_salvo)) {
                 console.log("⏭ Ignorado (não é PDF/imagem):", item.nome_anexo_salvo);
                 item.status_arquivos = '3';
-                const resposta = await emailService.updatePsts_Anexos(item);
+                try {
+                    await emailService.updatePsts_Anexos(item);
+                } catch (error) {
+                    console.log("❌ Erro ao atualizar status de", item.nome_anexo_salvo, ":", error.response?.data?.message || error.message);
+                }
                 continue;
             }
 
@@ -90,6 +94,7 @@ async function iniciar() {
             }
 
             console.log("✔ Arquivo encontrado:", caminhoArquivo);
+
 
             try {
                 const retorno = await emailService.uploadArquivoEmail(caminhoArquivo, item.id);

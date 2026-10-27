@@ -1,6 +1,16 @@
 /* DATA psts_anexos */
 const db = require("../../shared/infra/database");
 
+const { as } = require("pg-promise");
+
+/* normaliza datas e demais campos para os parametros nomeados */
+const limpaData = (d) => String(d).replace("GMT-0300", "").replace("T", " ").replace("Z", "");
+const dadosAnexo = (p) => ({
+    ...p,
+    data_criacao: limpaData(p.data_criacao),
+    data_atualizacao: limpaData(p.data_atualizacao),
+});
+
 /* GET CAMPOS */
 exports.getCampos = function(Pst_Anexo) {
     return [
@@ -107,41 +117,41 @@ exports.getPsts_Anexos = function(params) {
         if (params.acordo.trim() !== "") {
             if (where != "") where += " and ";
             if (params.sharp) {
-                where += `pst_anexo.acordo = '${params.acordo}' `;
+                where += as.format("pst_anexo.acordo = $1 ", [params.acordo]);
             } else {
-                where += `pst_anexo.acordo like '%${params.acordo.trim()}%' `;
+                where += as.format("pst_anexo.acordo like $1 ", ["%" + params.acordo.trim() + "%"]);
             }
         }
         if (params.nome_arquivo_pst.trim() !== "") {
             if (where != "") where += " and ";
             if (params.sharp) {
-                where += `pst_anexo.nome_arquivo_pst = '${params.nome_arquivo_pst}' `;
+                where += as.format("pst_anexo.nome_arquivo_pst = $1 ", [params.nome_arquivo_pst]);
             } else {
-                where += `pst_anexo.nome_arquivo_pst like '%${params.nome_arquivo_pst.trim()}%' `;
+                where += as.format("pst_anexo.nome_arquivo_pst like $1 ", ["%" + params.nome_arquivo_pst.trim() + "%"]);
             }
         }
         if (params.assunto_email.trim() !== "") {
             if (where != "") where += " and ";
             if (params.sharp) {
-                where += `pst_anexo.assunto_email = '${params.assunto_email}' `;
+                where += as.format("pst_anexo.assunto_email = $1 ", [params.assunto_email]);
             } else {
-                where += `pst_anexo.assunto_email like '%${params.assunto_email.trim()}%' `;
+                where += as.format("pst_anexo.assunto_email like $1 ", ["%" + params.assunto_email.trim() + "%"]);
             }
         }
         if (params.status_arquivos.trim() !== "") {
             if (where != "") where += " and ";
             if (params.sharp) {
-                where += `pst_anexo.status_arquivos = '${params.status_arquivos}' `;
+                where += as.format("pst_anexo.status_arquivos = $1 ", [params.status_arquivos]);
             } else {
-                where += `pst_anexo.status_arquivos like '%${params.status_arquivos.trim()}%' `;
+                where += as.format("pst_anexo.status_arquivos like $1 ", ["%" + params.status_arquivos.trim() + "%"]);
             }
         }
         if (params.status_assinatura.trim() !== "") {
             if (where != "") where += " and ";
             if (params.sharp) {
-                where += `pst_anexo.status_assinatura = '${params.status_assinatura}' `;
+                where += as.format("pst_anexo.status_assinatura = $1 ", [params.status_assinatura]);
             } else {
-                where += `pst_anexo.status_assinatura like '%${params.status_assinatura.trim()}%' `;
+                where += as.format("pst_anexo.status_assinatura like $1 ", ["%" + params.status_assinatura.trim() + "%"]);
             }
         }
 		if (params.id_inicial !== 0) {
@@ -252,57 +262,57 @@ exports.insertPst_Anexo = function(pst_anexo) {
 		 ,   user_update 
 		 ) 
 		 values(
-		     ${pst_anexo.id_empresa} 
-		 ,   ${pst_anexo.id} 
-		 ,   ${pst_anexo.id_email_pst} 
-		 ,   ${pst_anexo.id_pafs_det} 
-		 ,   '${pst_anexo.acordo}' 
-		 ,   '${pst_anexo.nome_arquivo_pst}' 
-		 ,   '${pst_anexo.caminho_arquivo_pst}' 
-		 ,   '${pst_anexo.assunto_email}' 
-		 ,   '${pst_anexo.remetente_email}' 
-		 ,   '${pst_anexo.data_email}' 
-		 ,   ${pst_anexo.indice_anexo} 
-		 ,   '${pst_anexo.nome_original_anexo}' 
-		 ,   '${pst_anexo.nome_anexo_salvo}' 
-		 ,   '${pst_anexo.caminho_anexo}' 
-		 ,   '${pst_anexo.pasta_acordo}' 
-		 ,   ${pst_anexo.tamanho_anexo_bytes} 
-		 ,   '${pst_anexo.data_criacao.replace("GMT-0300", "").replace("T", " ").replace("Z", "")}' 
-		 ,   '${pst_anexo.data_atualizacao.replace("GMT-0300", "").replace("T", " ").replace("Z", "")}' 
-		 ,   '${pst_anexo.status_arquivos}' 
-		 ,   '${pst_anexo.status_assinatura}' 
-		 ,   ${pst_anexo.user_insert} 
-		 ,   ${pst_anexo.user_update} 
+		     $<id_empresa> 
+		 ,   $<id> 
+		 ,   $<id_email_pst> 
+		 ,   $<id_pafs_det> 
+		 ,   $<acordo> 
+		 ,   $<nome_arquivo_pst> 
+		 ,   $<caminho_arquivo_pst> 
+		 ,   $<assunto_email> 
+		 ,   $<remetente_email> 
+		 ,   $<data_email> 
+		 ,   $<indice_anexo> 
+		 ,   $<nome_original_anexo> 
+		 ,   $<nome_anexo_salvo> 
+		 ,   $<caminho_anexo> 
+		 ,   $<pasta_acordo> 
+		 ,   $<tamanho_anexo_bytes> 
+		 ,   $<data_criacao> 
+		 ,   $<data_atualizacao> 
+		 ,   $<status_arquivos> 
+		 ,   $<status_assinatura> 
+		 ,   $<user_insert> 
+		 ,   $<user_update> 
 		 ) 
  returning * `;
-    return db.oneOrNone(strSql);
+    return db.oneOrNone(strSql, dadosAnexo(pst_anexo));
 };
 /* CRUD - UPDATE */
 exports.updatePst_Anexo = function(pst_anexo) {
     strSql = `update   psts_anexos set  
-		     id_email_pst = ${pst_anexo.id_email_pst} 
- 		 ,   id_pafs_det = ${pst_anexo.id_pafs_det} 
- 		 ,   acordo = '${pst_anexo.acordo}' 
- 		 ,   nome_arquivo_pst = '${pst_anexo.nome_arquivo_pst}' 
- 		 ,   caminho_arquivo_pst = '${pst_anexo.caminho_arquivo_pst}' 
- 		 ,   assunto_email = '${pst_anexo.assunto_email}' 
- 		 ,   remetente_email = '${pst_anexo.remetente_email}' 
- 		 ,   data_email = '${pst_anexo.data_email}' 
- 		 ,   indice_anexo = ${pst_anexo.indice_anexo} 
- 		 ,   nome_original_anexo = '${pst_anexo.nome_original_anexo}' 
- 		 ,   nome_anexo_salvo = '${pst_anexo.nome_anexo_salvo}' 
- 		 ,   caminho_anexo = '${pst_anexo.caminho_anexo}' 
- 		 ,   pasta_acordo = '${pst_anexo.pasta_acordo}' 
- 		 ,   tamanho_anexo_bytes = ${pst_anexo.tamanho_anexo_bytes} 
- 		 ,   data_criacao = '${pst_anexo.data_criacao.replace("GMT-0300", "").replace("T", " ").replace("Z", "")}' 
- 		 ,   data_atualizacao = '${pst_anexo.data_atualizacao.replace("GMT-0300", "").replace("T", " ").replace("Z", "")}' 
- 		 ,   status_arquivos = '${pst_anexo.status_arquivos}' 
- 		 ,   status_assinatura = '${pst_anexo.status_assinatura}' 
- 		 ,   user_insert = ${pst_anexo.user_insert} 
- 		 ,   user_update = ${pst_anexo.user_update} 
- 		 where id_empresa = ${pst_anexo.id_empresa} and  id = ${pst_anexo.id}  returning * `;
-    return db.oneOrNone(strSql);
+		     id_email_pst = $<id_email_pst> 
+ 		 ,   id_pafs_det = $<id_pafs_det> 
+ 		 ,   acordo = $<acordo> 
+ 		 ,   nome_arquivo_pst = $<nome_arquivo_pst> 
+ 		 ,   caminho_arquivo_pst = $<caminho_arquivo_pst> 
+ 		 ,   assunto_email = $<assunto_email> 
+ 		 ,   remetente_email = $<remetente_email> 
+ 		 ,   data_email = $<data_email> 
+ 		 ,   indice_anexo = $<indice_anexo> 
+ 		 ,   nome_original_anexo = $<nome_original_anexo> 
+ 		 ,   nome_anexo_salvo = $<nome_anexo_salvo> 
+ 		 ,   caminho_anexo = $<caminho_anexo> 
+ 		 ,   pasta_acordo = $<pasta_acordo> 
+ 		 ,   tamanho_anexo_bytes = $<tamanho_anexo_bytes> 
+ 		 ,   data_criacao = $<data_criacao> 
+ 		 ,   data_atualizacao = $<data_atualizacao> 
+ 		 ,   status_arquivos = $<status_arquivos> 
+ 		 ,   status_assinatura = $<status_assinatura> 
+ 		 ,   user_insert = $<user_insert> 
+ 		 ,   user_update = $<user_update> 
+ 		 where id_empresa = $<id_empresa> and  id = $<id>  returning * `;
+    return db.oneOrNone(strSql, dadosAnexo(pst_anexo));
 };
 /* CRUD - DELETE */
 exports.deletePst_Anexo = function(id_empresa, id) {
