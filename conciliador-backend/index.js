@@ -99,6 +99,8 @@ app.use("/api/arker", require("./route/arkerRoute.js"));
 app.use("/api/arker/complementar", require("./route/complementar/arkerRoute.js"));
 app.use("/api/cabcorrecao", require("./route/cabCorrecaoRoute.js"));
 app.use("/api/detcorrecao", require("./route/detCorrecaoRoute.js"));
+app.use("/api/credencialemail", require("./route/credencialEmailRoute.js"));
+app.use("/api/correcao_email", require("./route/correcaoEmailRoute.js"))
 app.listen(PORT, () => {
   console.log(`Servidor No Ar. Porta ${PORT}`);
 });

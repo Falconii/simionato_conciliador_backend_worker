@@ -56,8 +56,8 @@ async function iniciar() {
             id_final: opts.id_final,
             acordo: "",
             status_arquivos: "0",
-            pagina: 1,
-            tamPagina: 1000,
+            pagina: 0,
+            tamPagina: 2000,
         });
 
         console.log("total de e-mail emails: ",emails.length);

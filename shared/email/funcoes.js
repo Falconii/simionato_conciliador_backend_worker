@@ -1,9 +1,19 @@
 const usuarioSrv = require("../../shared/service/usuarioService");
 const tokenSrv = require("../../shared/service/tokenService");
+const correcaoEmailSrv = require("../../shared/service/correcaoEmailService");
+const simHistoricoSrv = require("../../shared/service/sim_historicoService");
 
 const fs = require("fs");
 const path = require("path");
-const resend = require("../../shared/email/email");
+const { enviarEmail } = require("../../shared/email/email_simionato");
+
+/* credencial padrão dos envios do sistema (credenciais_emails: id_empresa = 1, id = 1) */
+const ID_EMPRESA_EMAIL = 1;
+const ID_CREDENCIAL_EMAIL = 1;
+
+function enviar(mensagem) {
+  return enviarEmail({ id_empresa: ID_EMPRESA_EMAIL, id: ID_CREDENCIAL_EMAIL, ...mensagem });
+}
 
 function htmlEventoLiberacao(evento) {
   return `
@@ -499,8 +509,7 @@ async function enviarEmailLiberacaoEvento(evento, destinatario) {
   const htmlAprovacao = htmlEventoLiberacaoEx01(evento, url);
 
   try {
-    const resposta = await resend.emails.send({
-      from: "Sistema <notificacoes@falconi-iot.com.br>",
+    const resposta = await enviar({
       to: destinatario,
       subject: `Liberação do Evento - ${evento.descricao}`,
       html: htmlAprovacao,
@@ -590,8 +599,7 @@ exports.enviarEmailNovaSenha = async function (usuario, token) {
 </html>`;
 
   try {
-    const resposta = await resend.emails.send({
-      from: "Sistema <notificacoes@falconi-iot.com.br>",
+    const resposta = await enviar({
       to: destinatario,
       subject: `Link Para Troca De Senha`,
       html: html,
@@ -620,9 +628,6 @@ exports.enviarEmailRelatorioEvento = async function (usuario, owner, arquivo) {
   const destinatario = usuario.email;
 
   console.log("enviarEmailRelatorioEvento", destinatario, owner, arquivo);
-
-  // Lê o arquivo e converte para base64
-  const arquivoBase64 = fs.readFileSync(arquivo).toString('base64');
 
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -681,27 +686,22 @@ exports.enviarEmailRelatorioEvento = async function (usuario, owner, arquivo) {
 
   try {
 
-    const resposta = await resend.emails.send({
-      from: "Sistema <notificacoes@falconi-iot.com.br>",
+    const resposta = await enviar({
       to: destinatario,
       subject: `Relatório - ${owner}`,
       html: html,
       attachments: [
         {
           filename: path.basename(arquivo),
-          content: arquivoBase64,
-          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          path: arquivo,
+          contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         }
       ]
     });
 
     console.log("Email enviado:", resposta);
 
-    if (resposta.error !== null){
-       return {message: `Falha: ${resposta.error.message}`};
-    } else {
-      return {message: "E-Mail Enviado Com Sucesso!"};
-    }
+    return {message: "E-Mail Enviado Com Sucesso!"};
     
   } catch (erro) {
     console.error(erro);
@@ -752,8 +752,20 @@ function urlSistema() {
   }
 }
 
-function htmlAceiteCorrecao(usuario, cabCorrecao, detalhes) {
-  const url = urlSistema();
+/* valor em reais: 1234.5 -> R$ 1.234,50 */
+function formataValor(valor) {
+  const n = Number(valor);
+  if (valor === null || valor === undefined || valor === "" || Number.isNaN(n)) return "-";
+  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+/* sim = linha de sim_historicos (só quando a origem da correção é SIM) */
+function htmlAceiteCorrecao(usuario, cabCorrecao, detalhes, token, sim) {
+  const base = urlSistema();
+  /* com token, o link leva direto ao aceite (válido por 5 horas) */
+  const url = base && token
+    ? base.concat(`correcoes/aceite?token=${token}&id_cab_correcao=${cabCorrecao.id}`)
+    : base;
 
   const mensagens = detalhes
     .map(
@@ -772,11 +784,22 @@ function htmlAceiteCorrecao(usuario, cabCorrecao, detalhes) {
        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${mensagens}</table>`
     : "";
 
+  const blocoSim = sim
+    ? `<tr>
+        <td style="border:1px solid #ddd;"><strong>Razão Social:</strong><br>${escapaHtml(sim.nomcli)}</td>
+        <td style="border:1px solid #ddd;"><strong>Valor do Contrato:</strong><br>${escapaHtml(formataValor(sim.valorsazonal))}</td>
+      </tr>
+      <tr style="background:#eef3fb;">
+        <td style="border:1px solid #ddd;"><strong>Qtd. de Acordos:</strong><br>${escapaHtml(sim.qtd_acordos_pdf ?? "-")}</td>
+        <td style="border:1px solid #ddd;"><strong>Total dos Acordos:</strong><br>${escapaHtml(formataValor(sim.vlr_acordos_pdf))}</td>
+      </tr>`
+    : "";
+
   const botao = url
-    ? `<p style="text-align:center; margin-top:30px;">
-         <a href="${escapaHtml(url)}" style="padding:14px 26px; border-radius:6px; text-decoration:none;
-            font-size:16px; font-weight:bold; background-color:#28a745; color:#ffffff;">
-           ACESSAR O SISTEMA
+    ? `<p style="text-align:right; margin-top:30px;">
+         <a href="${escapaHtml(url)}" style="text-decoration:none; font-size:16px;
+            font-weight:bold; color:#28a745;">
+           ACEITAR CORREÇÃO
          </a>
        </p>`
     : "";
@@ -788,13 +811,13 @@ function htmlAceiteCorrecao(usuario, cabCorrecao, detalhes) {
   <title>Aceite de Correção</title>
 </head>
 <body style="margin:0; padding:0; background-color:#f4f4f4; font-family:Arial, Helvetica, sans-serif;">
-  <div style="max-width:640px; margin:20px auto; background-color:#ffffff; border-radius:6px;
+  <div style="max-width:640px; margin:20px auto; background-color:#f4f4f4; border-radius:6px;
               border:1px solid #e0e0e0; padding:20px 24px;">
 
-    <h1 style="font-size:20px; margin:0 0 16px 0; color:#333333;">Aceite de Correção</h1>
+    <h1 style="font-size:20px; margin:0 0 16px 0; color:#333333; text-align:center;">Aceite de Correção</h1>
 
-    <p>${escapaHtml(usuario.razao)},</p>
-    <p>Foi incluída uma correção que aguarda aceite. Segue o resumo:</p>
+    <p style="text-align:center; font-size:16px; color:#333333;"><strong>Correção Solicitada Por:</strong> ${escapaHtml(cabCorrecao.sol_nome)}</p>
+    <p style="color:#333333;">Foi incluída uma correção que aguarda aceite. Segue o resumo:</p>
 
     <table width="100%" cellpadding="8" cellspacing="0" style="font-size:14px; border-collapse:collapse;">
       <tr style="background:#eef3fb;">
@@ -805,10 +828,8 @@ function htmlAceiteCorrecao(usuario, cabCorrecao, detalhes) {
         <td style="border:1px solid #ddd;"><strong>Origem:</strong><br>${escapaHtml(cabCorrecao.origem)} - ${escapaHtml(cabCorrecao.id_origem)}</td>
         <td style="border:1px solid #ddd;"><strong>Data:</strong><br>${escapaHtml(cabCorrecao.cadastr)}</td>
       </tr>
+      ${blocoSim}
       <tr style="background:#eef3fb;">
-        <td colspan="2" style="border:1px solid #ddd;"><strong>Descrição:</strong><br>${escapaHtml(cabCorrecao.descricao)}</td>
-      </tr>
-      <tr>
         <td colspan="2" style="border:1px solid #ddd;"><strong>Tarefa:</strong><br>${escapaHtml(cabCorrecao.tarefa)}</td>
       </tr>
       <tr style="background:#eef3fb;">
@@ -834,8 +855,9 @@ function htmlAceiteCorrecao(usuario, cabCorrecao, detalhes) {
 }
 
 /* destinatário inicial: e-mail do solicitante da correção */
-exports.enviarEmailAceiteCorrecao = async function (usuario, cabCorrecao, detalhe) {
-  const destinatario = cabCorrecao.sol_email || usuario.email;
+exports.enviarEmailAceiteCorrecao = async function (usuario, cabCorrecao, detalhe, token, destinatarioEmail, sim) {
+  const destinatario = destinatarioEmail || cabCorrecao.sol_email || usuario.email;
+
 
   if (!destinatario) {
     return { message: "Falha: Solicitante Sem E-Mail Cadastrado!" };
@@ -846,20 +868,16 @@ exports.enviarEmailAceiteCorrecao = async function (usuario, cabCorrecao, detalh
 
   try {
     /* montado dentro do try: um erro aqui não pode virar rejeição sem tratamento */
-    const html = htmlAceiteCorrecao(usuario, cabCorrecao, detalhes);
+    const html = htmlAceiteCorrecao(usuario, cabCorrecao, detalhes, token, sim);
 
-    const resposta = await resend.emails.send({
-      from: "Sistema <notificacoes@falconi-iot.com.br>",
+    const resposta = await enviar({
       to: destinatario,
-      subject: `Aceite de Correção - ${cabCorrecao.descricao}`,
+      subject: `Aceite de Correção - ${cabCorrecao.id}`,
       html: html,
     });
 
     console.log("Email enviado:", resposta);
 
-    if (resposta.error) {
-      return { message: `Falha: ${resposta.error.message}` };
-    }
     return { message: "E-Mail Enviado Com Sucesso!" };
   } catch (erro) {
     console.error("Erro ao enviar email:", erro);
@@ -867,6 +885,75 @@ exports.enviarEmailAceiteCorrecao = async function (usuario, cabCorrecao, detalh
   }
 };
 
+/* grupos: solicitante do 902 ou 906 avisa o grupo 1 e solicitante do 1 avisa o 902 */
+const GRUPO_DESTINO_ACEITE = { 902: 1, 906: 1, 1: 902 };
+
+/* destinatários cadastrados em correcoes_emails que pertencem ao grupo de destino */
+async function destinatariosAceite(usuario) {
+  const grupoDestino = GRUPO_DESTINO_ACEITE[Number(usuario.grupo)];
+
+  if (!grupoDestino) {
+    return [];
+  }
+
+  const auditores = await correcaoEmailSrv.getCorrecoesEmails({
+    id_empresa: usuario.id_empresa,
+    id: 0,
+    id_auditor: 0,
+    auditor_grupo: grupoDestino,
+    pagina: 0,
+    tamPagina: 50,
+    contador: "N",
+    orderby: "",
+    sharp: false,
+  });
+
+  /* sem e-mail ou repetido não entra na lista; guarda o usuário dono do e-mail para o token */
+  const destinatarios = new Map();
+  for (const a of auditores) {
+    const email = (a.auditor_email || "").trim();
+    if (email !== "" && !destinatarios.has(email)) {
+      destinatarios.set(email, { id_usuario: a.id_auditor, email });
+    }
+  }
+
+  return [...destinatarios.values()];
+}
+
 exports.PreparaEmailAceiteCorrecao = async function (usuario, cabCorrecao, detalhe) {
-  return await exports.enviarEmailAceiteCorrecao(usuario, cabCorrecao, detalhe);
+  const destinatarios = await destinatariosAceite(usuario);
+
+  if (destinatarios.length === 0) {
+    return { message: "Falha: Nenhum Destinatário Cadastrado Para O Aceite!" };
+  }
+
+  /* dados do contrato (razão social e valor) quando a correção vem de um SIM */
+  let sim = null;
+  if (String(cabCorrecao.origem).toUpperCase() === "SIM" && cabCorrecao.id_origem) {
+    sim = await simHistoricoSrv.getSim_Historico(cabCorrecao.id_empresa ?? usuario.id_empresa, cabCorrecao.id_origem);
+  }
+
+  let enviados = 0;
+  let falhas = 0;
+
+  for (const destinatario of destinatarios) {
+    /* token de aceite (5h) de cada e-mail: só vale para este destinatário e esta correção */
+    const token = tokenSrv.token_aceite(
+      cabCorrecao.id_empresa ?? usuario.id_empresa,
+      destinatario.id_usuario,
+      cabCorrecao.id,
+    );
+    const envio = await exports.enviarEmailAceiteCorrecao(usuario, cabCorrecao, detalhe, token, destinatario.email, sim);
+    if (envio.message.startsWith("Falha")) {
+      falhas++;
+    } else {
+      enviados++;
+    }
+  }
+
+  if (falhas > 0) {
+    return { message: `Falha: ${falhas} De ${destinatarios.length} E-Mails Não Enviados!` };
+  }
+
+  return { message: `E-Mail Enviado Com Sucesso! (${enviados})` };
 };

@@ -91,6 +91,37 @@ exports.generateTempoToken = function (user) {
   );
 };
 
+/* token de aceite da correção: 5 horas, amarrado ao destinatário do e-mail
+   (id_usuario) e à correção (id_cab_correcao). Não é gravado na tabela tokens,
+   então não serve como token de login */
+exports.token_aceite = function (id_empresa, id_usuario, id_cab_correcao) {
+  return jwt.sign(
+    { id_empresa, id_usuario, id_cab_correcao, tipo: "aceite" },
+    ACCESS_SECRET,
+    { expiresIn: "5h" },
+  );
+};
+
+/* valida um token_aceite; devolve { status, mensagem, id_empresa, id_usuario, id_cab_correcao } */
+exports.verifyTokenAceite = async function (token) {
+  const result = await exports.verifyToken(token);
+
+  if (result.status === 200) {
+    const payload = jwt.decode(token);
+    if (payload?.tipo !== "aceite") {
+      return { status: 403, mensagem: "Token inválido", id_empresa: 0, id_usuario: 0 };
+    }
+    return {
+      ...result,
+      id_empresa: payload.id_empresa,
+      id_usuario: payload.id_usuario,
+      id_cab_correcao: payload.id_cab_correcao,
+    };
+  }
+
+  return result;
+};
+
 exports.generateRefreshToken = function (user) {
   return jwt.sign(
     { id_empresa: user.id_empresa, id_usuario: user.id },

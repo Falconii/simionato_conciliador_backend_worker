@@ -6,7 +6,6 @@ const shared = require("../../shared/util/shared.js");
 const camposSelect = `
 			   cab_correcao.id as id
 			,  cab_correcao.id_empresa as id_empresa
-			,  cab_correcao.descricao as descricao
 			, to_char(cab_correcao.cadastr, 'DD/MM/YYYY') as cadastr
 			,  cab_correcao.origem as origem
 			,  cab_correcao.id_origem as id_origem
@@ -35,7 +34,6 @@ const fromCab = ` from cab_correcoes cab_correcao
 const ORDENACAO = {
 	'': 'cab_correcao.id_empresa,cab_correcao.id',
 	'000001': 'cab_correcao.id_empresa,cab_correcao.id',
-	'000002': 'cab_correcao.id_empresa,cab_correcao.descricao',
 	'000003': 'cab_correcao.id_empresa,cab_correcao.cadastr',
 	'000004': 'cab_correcao.id_empresa,cab_correcao.status',
 	'000005': 'cab_correcao.id_empresa,sol.razao,cab_correcao.id',
@@ -70,7 +68,6 @@ exports.getCampos = function(CabCorrecao){
 return [
 			CabCorrecao.id,
 			CabCorrecao.id_empresa,
-			CabCorrecao.descricao,
 			CabCorrecao.cadastr,
 			CabCorrecao.origem,
 			CabCorrecao.id_origem,
@@ -139,7 +136,6 @@ if (params) {
 	condicaoNumero('cab_correcao.id', params.id, condicoes, valores);
 	condicaoNumero('cab_correcao.id_origem', params.id_origem, condicoes, valores);
 	condicaoTexto('cab_correcao.origem', params.origem, params.sharp, condicoes, valores);
-	condicaoTexto('cab_correcao.descricao', params.descricao, params.sharp, condicoes, valores);
 	condicaoNumero('cab_correcao.id_sol', params.id_sol, condicoes, valores);
 	condicaoNumero('cab_correcao.id_exec', params.id_exec, condicoes, valores);
 	condicaoTexto('cab_correcao.tarefa', params.tarefa, params.sharp, condicoes, valores);
@@ -190,7 +186,6 @@ exports.insertCabCorrecao = function(cab){
     const strSql = `
         insert into cab_correcoes (
             id_empresa,
-            descricao,
             cadastr,
             origem,
             id_origem,
@@ -204,14 +199,13 @@ exports.insertCabCorrecao = function(cab){
             user_update
         )
         values (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
         )
         returning *;
     `;
 
     const valores = [
         cab.id_empresa,
-        cab.descricao,
         shared.formatDateYYYYMMDD(cab.cadastr),
         cab.origem,
         cab.id_origem,
@@ -232,20 +226,18 @@ exports.insertCabCorrecao = function(cab){
 /* CRUD - UPDATE */
 exports.updateCabCorrecao = function(cab){
 	const strSql = `update cab_correcoes set
-			     descricao = $1
-	 		 ,   cadastr = $2
-	 		 ,   origem = $3
-	 		 ,   id_origem = $4
-	 		 ,   id_exec = $5
-	 		 ,   id_sol = $6
-	 		 ,   tarefa = $7
-	 		 ,   status = $8
-	 		 ,   status_assinatura_cliente = $9
-	 		 ,   status_assinatura_gp = $10
-	 		 ,   user_update = $11
-	 		 where id_empresa = $12 and  id = $13  returning * `;
+			     cadastr = $1
+	 		 ,   origem = $2
+	 		 ,   id_origem = $3
+	 		 ,   id_exec = $4
+	 		 ,   id_sol = $5
+	 		 ,   tarefa = $6
+	 		 ,   status = $7
+	 		 ,   status_assinatura_cliente = $8
+	 		 ,   status_assinatura_gp = $9
+	 		 ,   user_update = $10
+	 		 where id_empresa = $11 and  id = $12  returning * `;
 	const valores = [
-		cab.descricao,
 		shared.formatDateYYYYMMDD(cab.cadastr),
 		cab.origem,
 		cab.id_origem,

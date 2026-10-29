@@ -10,7 +10,7 @@ const detCorrecao = require('../../shared/service/detCorrecaoService.js');
 const funcoes = require('../../shared/email/funcoes.js')
 router.use(autenticarToken); 
 
-/* ROTA INSERT paf_cab */
+
 router.post("/aceiteCabCorrecao",async function(req, res) {
 /*
     {
@@ -63,6 +63,10 @@ router.post("/aceiteCabCorrecao",async function(req, res) {
                 return response.notFound(res, "CAB_CORRECAO", { id_cab_correcao });
             }
 
+            if (cab.status != '0') {
+                return response.error(res, `Status = ${cab.status}, Envio Só Permitido Com Status = 0 (Não Enviado)!`, 400, "");
+            }
+
             /* buscar as mensagens no det-correcao, da mais antiga para a mais nova */
             const detalhes = await detCorrecao.getDetCorrecoes({
                 id_empresa: id_empresa,
@@ -72,7 +76,15 @@ router.post("/aceiteCabCorrecao",async function(req, res) {
 
             /* espera o envio para devolver ao front se o e-mail saiu ou não.
                o usuário não é devolvido para não expor o hash da senha */
-            const envio = await funcoes.enviarEmailAceiteCorrecao(usuario, cab, detalhes);
+            let envio;
+            try {
+                envio = await funcoes.PreparaEmailAceiteCorrecao(usuario, cab, detalhes);
+            } finally {
+                /* passa para 1 - Aguardando Executor, deu certo o e-mail ou não */
+                cab.status      = '1';
+                cab.user_update = id_usuario;
+                await cabCorrecao.updateCabCorrecao(cab);
+            }
 
             return response.success(res, envio.message, {
                 cabCorrecao: cab,

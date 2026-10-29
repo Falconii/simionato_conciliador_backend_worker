@@ -116,9 +116,16 @@ exports.getSim_Historico = function(id_empresa,id){
 			,  sim.user_update as  user_update 
             ,  coalesce(ass.resposta,'')    as ass_resposta
             ,  coalesce(ass.obs,'')            as ass_obs
-			,  coalesce(ass.upload_cliente,'')      as ass_upload_cliente
+			,  coalesce(ass.upload_cliente,'')      as ass_upload_cliente 
+			,  coalesce(cab.id,0) as corr_id
+			,  coalesce(cab.tarefa,'') as corr_tarefa
+			,  coalesce(cab.id_sol,0) as corr_id_sol
+            ,  coalesce(cab.id_exec,0) as corr_id_exec
+            ,  coalesce(cab.status,'') as corr_status
  			FROM sim_historicos sim 	     
+			left join cab_correcoes cab on cab.id_empresa = sim.id_empresa and cab.origem = 'SIM' and cab.id_origem = sim.id
 			left join assinaturas ass on ass.id_empresa = sim.id_empresa and ass.id_sim = sim.id
+
 			 where sim.id_empresa = ${id_empresa} and  sim.id = ${id}  `;
 	return  db.oneOrNone(strSql);
 }
@@ -239,6 +246,7 @@ if (params) {
 	if (params.contador == 'S') {
 		sqlStr = `SELECT COALESCE(COUNT(*),0)::INT4 as total 
 				  FROM sim_historicos sim      
+				  left join cab_correcoes cab on cab.id_empresa = sim.id_empresa and cab.origem = 'SIM' and cab.id_origem = sim.id
 				  left join assinaturas ass on ass.id_empresa = sim.id_empresa and ass.id_sim = sim.id
 				  ${ where} `;
 	    console.log("getSim_Historicos contador",sqlStr);			  
@@ -300,7 +308,13 @@ if (params) {
             ,  coalesce(ass.resposta,'')    as ass_resposta
             ,  coalesce(ass.obs,'')            as ass_obs
 			,  coalesce(ass.upload_cliente,'')      as ass_upload_cliente
-			FROM sim_historicos sim      
+			,  coalesce(cab.id,0) as corr_id
+			,  coalesce(cab.tarefa,'') as corr_tarefa
+			,  coalesce(cab.id_sol,0) as corr_id_sol
+            ,  coalesce(cab.id_exec,0) as corr_id_exec
+            ,  coalesce(cab.status,'') as corr_status
+			FROM sim_historicos sim 
+			left join cab_correcoes cab on cab.id_empresa = sim.id_empresa and cab.origem = 'SIM' and cab.id_origem = sim.id   
             left join assinaturas ass on ass.id_empresa = sim.id_empresa and ass.id_sim = sim.id
 			${where} 			${ orderby} ${ paginacao} `;
 			console.log("getSim_Historicos ",strSql);

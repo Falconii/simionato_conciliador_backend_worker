@@ -3,6 +3,9 @@ const express = require('express');
 const router = express.Router();
 const { autenticarToken} = require('../../shared/middleware/autenticartoken');
 const cabCorrecaoSrv = require('../../shared/service/cabCorrecaoService');
+const usuarioSrv = require("../../shared/service/usuarioService");
+const tokenSrv = require("../../shared/service/tokenService");
+const response = require("../../shared/util/respostaPadrao.js");
 router.use(autenticarToken);
 /* ROTA GETONE cab_correcao */
 router.get("/:id_empresa/:id",async function(req, res) {
@@ -137,7 +140,6 @@ router.post("/cabcorrecoes",async function(req, res) {
 		"id":0,
 		"id_origem":0,
 		"origem":"",
-		"descricao":"",
 		"id_sol":0,
 		"id_exec":0,
 		"tarefa":"",
@@ -210,5 +212,173 @@ catch (err)
 		}
 	}
 })
+
+router.post("/ajusta_status",async function(req, res) {
+/*
+	{
+        "id_cab_correcao",
+		"status":0,
+	}
+*/
+
+		try {
+			// Validação
+			const dados = {
+				id_empresa: req.id_empresa,
+				id_usuario: req.id_usuario,
+				id_cab_correcao: req.body.id_cab_correcao,
+				status:req.body.status
+			};
+
+			const camposObrigatorios = [
+				"id_empresa",
+				"id_usuario",
+				"id_cab_correcao",
+				"status"
+			];
+
+			const camposAusentes = camposObrigatorios.filter(
+				(campo) => !dados[campo],
+			);
+
+			if (camposAusentes.length > 0) {
+				return response.validationError(res, camposAusentes);
+			}
+
+			const id_empresa      = req.id_empresa;
+			const id_usuario      = req.id_usuario;
+			const id_cab_correcao = req.body.id_cab_correcao;
+			const status          = req.body.status;
+
+			/* validar cab-correcao */
+			let cab = await cabCorrecaoSrv.getCabCorrecao(id_empresa, id_cab_correcao);
+
+			if (!cab) {
+				return response.notFound(res, "CAB_CORRECAO", { id_cab_correcao });
+			}
+
+			if (cab.status == '0'){
+				return response.error(res,"Status = 0, Não Aceita Mudança!",400,"")
+			}
+
+			if (status == '1'){
+				return response.error(res,"Status = 1, Não Pode Ser Alterado Por Esta API!",400,"")
+			}
+
+	    	if (cab.status == '9'){
+				return response.error(res,"Status = 9, Correção Encerrada!",400,"")
+			}
+
+			cab.status = status;
+
+            cab.user_update = id_usuario;
+
+			cab = await cabCorrecaoSrv.updateCabCorrecao(cab);
+
+			return response.success(res, 'Status Alterado Com Sucesso!', {
+				cabCorrecao: cab,
+			});
+
+		} catch (err) {
+			if (err.name == "MyExceptionDB") {
+				res.status(409).json(err);
+			} else {
+				res.status(500).json({
+					erro: "BAK-END",
+					tabela: "Cab-Correcao",
+					message: err.message,
+				});
+			}
+		} 
+	},
+);
+
+router.post("/aceite_cabcorrecao",async function(req, res) {
+/*
+	{
+		"id_cab_correcao": 1,
+		"token": "token_aceite recebido no e-mail" } o executor é sempre o usuário logado (token de login) */
+
+		try {
+			// Validação
+			const dados = {
+				id_empresa: req.id_empresa,
+				id_usuario: req.id_usuario,
+				id_cab_correcao: req.body.id_cab_correcao,
+				token: req.body.token
+			};
+
+			const camposObrigatorios = [
+				"id_empresa",
+				"id_usuario",
+				"id_cab_correcao", "token" ];
+
+			const camposAusentes = camposObrigatorios.filter(
+				(campo) => !dados[campo],
+			);
+
+			if (camposAusentes.length > 0) {
+				return response.validationError(res, camposAusentes);
+			}
+
+			const { id_empresa, id_usuario, id_cab_correcao } = dados;
+				const id_exec = id_usuario;
+
+				/* token do e-mail: válido, do tipo aceite, deste usuário, desta correção e desta empresa */
+				const tokenAceite = await tokenSrv.verifyTokenAceite(dados.token);
+
+				if (tokenAceite.status !== 200) {
+					return response.error(res, `Link De Aceite Inválido Ou Expirado! ${tokenAceite.mensagem ?? ""}`.trim(), 403, "");
+				}
+
+				if (tokenAceite.id_usuario != id_usuario) {
+					return response.error(res, "Este Link De Aceite Foi Enviado Para Outro Usuário!", 403, "");
+				}
+
+				if (tokenAceite.id_cab_correcao != id_cab_correcao || tokenAceite.id_empresa != id_empresa) {
+					return response.error(res, "Este Link De Aceite Não Pertence A Esta Correção!", 403, "");
+				}
+
+			/* validar cab-correcao */
+			let cab = await cabCorrecaoSrv.getCabCorrecao(id_empresa, id_cab_correcao);
+
+			if (!cab) {
+				return response.notFound(res, "CAB_CORRECAO", { id_cab_correcao });
+			}
+
+			if (cab.status != '1'){
+				return response.error(res,`Status = ${cab.status}, Aceite Só Permitido Com Status = 1 (Aguardando Executor)!`,400,"")
+			}
+
+			/* validar executor */
+			const exec = await usuarioSrv.getUsuario(id_empresa, id_exec);
+
+			if (!exec) {
+				return response.notFound(res, "USUARIO_EXEC", { id_exec });
+			}
+
+			cab.status      = '2';
+			cab.id_exec     = id_exec;
+			cab.user_update = id_usuario;
+
+			cab = await cabCorrecaoSrv.updateCabCorrecao(cab);
+
+			return response.success(res, 'Correção Aceita Com Sucesso!', {
+				cabCorrecao: cab,
+			});
+
+		} catch (err) {
+			if (err.name == "MyExceptionDB") {
+				res.status(409).json(err);
+			} else {
+				res.status(500).json({
+					erro: "BAK-END",
+					tabela: "Cab-Correcao",
+					message: err.message,
+				});
+			}
+		}
+	},
+);
 
 module.exports = router;

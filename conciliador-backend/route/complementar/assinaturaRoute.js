@@ -5,6 +5,8 @@ const router = express.Router();
 const { autenticarToken } = require("../../../shared/middleware/autenticartoken");
 const assinaturaSrv = require("../../../shared/service/assinaturaService");
 const assinatuaComplementarSrv = require("../../../shared/service/complementar/assinaturaService");
+const cab_correcoesSrv = require("../../../shared/service/cabCorrecaoService");
+const funcoes = require("../../../shared/email/funcoes")
 
 router.use(autenticarToken);
 
@@ -25,6 +27,8 @@ router.post("/atualizarassinatura", async function (req, res) {
     if (registro == null) {
       assinatura.user_insert = id_usuario;
       registro = await assinaturaSrv.insertAssinatura(assinatura);
+
+       await 
 
       res.status(201).json(registro);
     } else {

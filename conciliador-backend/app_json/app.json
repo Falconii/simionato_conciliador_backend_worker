@@ -5792,15 +5792,6 @@
                             "validacao": []
                         },
                         {
-                            "name": "descricao",
-                            "type": "varchar",
-                            "length": 40,
-                            "precision": 0,
-                            "nulo": "N",
-                            "padrao": "",
-                            "validacao": []
-                        },
-                        {
                             "name": "cadastr",
                             "type": "Date",
                             "length": 0,
@@ -5991,13 +5982,6 @@
                             },
                             {
                                 "name": "origem",
-                                "filtro": "S",
-                                "atividador": " !== ''",
-                                "tipo": "string",
-                                "padrao": ""
-                            },
-                            {
-                                "name": "descricao",
                                 "filtro": "S",
                                 "atividador": " !== ''",
                                 "tipo": "string",

@@ -4,6 +4,8 @@ const express = require('express');
 const router = express.Router(); 
 const { autenticarToken} = require('../../shared/middleware/autenticartoken');
 const contrato_cabSrv = require('../../shared/service/contrato_cabService');
+const { cabCorrecao } = require('../../shared/util/cabCorrecaoParametros');
+
 router.use(autenticarToken); 
 /* ROTA GETONE contrato_cab */
 router.get("/:id_empresa/:nome_arquivo/:pasta_arquivo/:aba",async function(req, res) {
@@ -165,5 +167,8 @@ catch (err)
 		}
 	}
 })
+
+
+
 
 module.exports = router;
