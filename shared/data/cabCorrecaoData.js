@@ -11,6 +11,7 @@ const camposSelect = `
 			,  cab_correcao.id_origem as id_origem
 			,  cab_correcao.id_exec as id_exec
 			,  cab_correcao.id_sol as id_sol
+			,  cab_correcao.id_aguardando_resposta as id_aguardando_resposta
 			,  cab_correcao.tarefa as tarefa
 			,  cab_correcao.status as status
 			,  cab_correcao.status_assinatura_cliente as status_assinatura_cliente
@@ -21,13 +22,17 @@ const camposSelect = `
 			,  coalesce(exec.email,'') as exec_email
 			,  coalesce(sol.razao,'')  as sol_nome
 			,  coalesce(sol.email,'')  as sol_email
+			,  coalesce(agu.razao,'')  as agu_nome
 			,  coalesce(sim.codemp,0) as sim_cod_emp
-			,  coalesce(sim.numpro,0) as sim_num_pro `;
+			,  coalesce(sim.numpro,0) as sim_num_pro
+			,  (select count(*) from acoes_correcoes aco where aco.id_empresa = cab_correcao.id_empresa and aco.id_cab_correcoes = cab_correcao.id and aco.flag_acao = '1' and aco.status = '1')::int4 as acoes_upload_pendentes
+			,  (select count(*) from acoes_correcoes aco where aco.id_empresa = cab_correcao.id_empresa and aco.id_cab_correcoes = cab_correcao.id and aco.flag_acao = '2' and aco.status = '1')::int4 as acoes_exclusao_pendentes `;
 
 /* FROM + JOIN compartilhado pelas consultas */
 const fromCab = ` from cab_correcoes cab_correcao
 			inner join  usuarios sol on cab_correcao.id_empresa = sol.id_empresa and cab_correcao.id_sol = sol.id
 			left  join  usuarios exec on cab_correcao.id_empresa = exec.id_empresa and cab_correcao.id_exec = exec.id
+			left  join  usuarios agu on cab_correcao.id_empresa = agu.id_empresa and cab_correcao.id_aguardando_resposta = agu.id
 			left  join  sim_historicos sim on cab_correcao.id_empresa = sim.id_empresa and cab_correcao.id_origem = sim.id and cab_correcao.origem = 'SIM' 
 		`;
 /* ORDENAÇÃO permitida (whitelist): só estas chaves chegam ao SQL */
@@ -138,6 +143,7 @@ if (params) {
 	condicaoTexto('cab_correcao.origem', params.origem, params.sharp, condicoes, valores);
 	condicaoNumero('cab_correcao.id_sol', params.id_sol, condicoes, valores);
 	condicaoNumero('cab_correcao.id_exec', params.id_exec, condicoes, valores);
+	condicaoNumero('cab_correcao.id_aguardando_resposta', params.id_aguardando_resposta, condicoes, valores);
 	condicaoTexto('cab_correcao.tarefa', params.tarefa, params.sharp, condicoes, valores);
 
 	const cadastr = String(params.cadastr ?? '').trim();
@@ -150,6 +156,18 @@ if (params) {
 	if (status !== '') {
 		valores.push(status);
 		condicoes.push(`cab_correcao.status = $${valores.length}`);
+	}
+
+	/* ação pendente (status '1' de acoes_correcoes): '*' = qualquer ação, ou o tipo da ação.
+	   EXISTS e não JOIN, para a correção não repetir na lista nem na contagem */
+	const flagAcao = String(params.flag_acao ?? '').trim();
+	if (flagAcao === '*' || /^[0-9A-Za-z]$/.test(flagAcao)) {
+		let filtroTipo = '';
+		if (flagAcao !== '*') {
+			valores.push(flagAcao);
+			filtroTipo = ` and aco.flag_acao = $${valores.length}`;
+		}
+		condicoes.push(`exists (select 1 from acoes_correcoes aco where aco.id_empresa = cab_correcao.id_empresa and aco.id_cab_correcoes = cab_correcao.id and aco.status = '1'${filtroTipo})`);
 	}
 
 	const where = condicoes.length > 0 ? " where " + condicoes.join(" and ") : "";
@@ -253,9 +271,27 @@ exports.updateCabCorrecao = function(cab){
 	];
 	return db.oneOrNone(strSql, valores);
 };
+/* id_aguardando_resposta = usuário oposto ao autor da última mensagem:
+   última mensagem do solicitante -> aguarda o executor, e vice-versa; sem mensagem ou sem executor = 0.
+   Autor que não é solicitante nem executor não muda o valor */
+exports.atualizaAguardandoResposta = function(id_empresa, id_cab){
+	const strSql = `update cab_correcoes c set id_aguardando_resposta = coalesce((
+				select case when d.id_auditor = c.id_sol then c.id_exec
+				            when d.id_auditor = c.id_exec then c.id_sol
+				            else c.id_aguardando_resposta end
+				  from det_correcoes d
+				 where d.id_empresa = c.id_empresa and d.id_cab = c.id
+				 order by d.id desc limit 1), 0)
+			 where c.id_empresa = $1 and c.id = $2 `;
+	return db.none(strSql, [id_empresa, id_cab]);
+};
 /* CRUD - DELETE */
+/* exclui as mensagens (det_correcoes) junto com o cabeçalho, na mesma transação */
 exports.deleteCabCorrecao = function(id_empresa,id){
-	const strSql = `delete from cab_correcoes
-			 where id_empresa = $1 and  id = $2  `;
-	return db.oneOrNone(strSql, [id_empresa, id]);
+	return db.tx(async t => {
+		await t.none(`delete from det_correcoes
+				 where id_empresa = $1 and  id_cab = $2  `, [id_empresa, id]);
+		return t.oneOrNone(`delete from cab_correcoes
+				 where id_empresa = $1 and  id = $2  `, [id_empresa, id]);
+	});
 };

@@ -3,6 +3,14 @@ const express = require('express');
 const router = express.Router();
 const { autenticarToken} = require('../../shared/middleware/autenticartoken');
 const detCorrecaoSrv = require('../../shared/service/detCorrecaoService');
+const funcoes = require('../../shared/email/funcoes.js');
+
+/* avisa a contra-partida por e-mail sem prender a resposta do chat: erro só vai para o log */
+function avisaContraPartida(det, registro, acao) {
+	funcoes.PreparaEmailAtualizacaoCorrecao({ ...det, ...registro }, acao)
+		.then((envio) => console.log('E-mail atualização da correção:', envio.message))
+		.catch((err) => console.error('Erro no e-mail de atualização da correção:', err));
+}
 router.use(autenticarToken);
 /* ROTA GETONE det_correcao */
 router.get("/:id_empresa/:id",async function(req, res) {
@@ -69,6 +77,7 @@ try
 		else
 		{
 			res.status(200).json(registro);
+			avisaContraPartida(det, registro, 'INCLUSAO');
 		}
 }
 catch (err)
@@ -96,6 +105,7 @@ try
 		else
 		{
 			res.status(200).json(registro);
+			avisaContraPartida(det, registro, 'ALTERACAO');
 		}
 }
 catch (err)

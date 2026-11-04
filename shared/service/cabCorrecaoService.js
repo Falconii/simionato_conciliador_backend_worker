@@ -36,7 +36,13 @@ try
 {
 	await regras.cabCorrecao_Alteracao(cab);
 	validacao.Validacao(TABELA,cab, parametros.cabCorrecao());
-	return await cabCorrecaoData.updateCabCorrecao(cab);
+	const registro = await cabCorrecaoData.updateCabCorrecao(cab);
+	if (registro) {
+		await cabCorrecaoData.atualizaAguardandoResposta(registro.id_empresa, registro.id);
+		/* devolve o valor já recalculado */
+		return (await cabCorrecaoData.getCabCorrecao(registro.id_empresa, registro.id)) ?? registro;
+	}
+	return registro;
 }
 catch (err)
 {

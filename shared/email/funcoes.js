@@ -2,6 +2,9 @@ const usuarioSrv = require("../../shared/service/usuarioService");
 const tokenSrv = require("../../shared/service/tokenService");
 const correcaoEmailSrv = require("../../shared/service/correcaoEmailService");
 const simHistoricoSrv = require("../../shared/service/sim_historicoService");
+const cabCorrecaoSrv = require("../../shared/service/cabCorrecaoService");
+const detCorrecaoSrv = require("../../shared/service/detCorrecaoService");
+const acaoCorrecaoSrv = require("../../shared/service/acaoCorrecaoService");
 
 const fs = require("fs");
 const path = require("path");
@@ -737,6 +740,17 @@ const SITUACAO_CORRECAO = {
   "9": "Encerrada",
 };
 
+/* flag_acao e status de acoes_correcoes, mesmos textos do front */
+const TIPO_ACAO_CORRECAO = {
+  "1": "Upload De Arquivos",
+  "2": "Exclusão De Arquivos",
+};
+
+const STATUS_ACAO_CORRECAO = {
+  "1": "Pendente",
+  "2": "Executada",
+};
+
 function textoAssinatura(sigla) {
   if (!sigla || !String(sigla).trim()) return "-";
   return sigla === "S" ? "OK" : "Falta Assinatura";
@@ -759,13 +773,31 @@ function formataValor(valor) {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-/* sim = linha de sim_historicos (só quando a origem da correção é SIM) */
-function htmlAceiteCorrecao(usuario, cabCorrecao, detalhes, token, sim) {
-  const base = urlSistema();
-  /* com token, o link leva direto ao aceite (válido por 5 horas) */
-  const url = base && token
-    ? base.concat(`correcoes/aceite?token=${token}&id_cab_correcao=${cabCorrecao.id}`)
-    : base;
+/* corpo comum dos e-mails de correção (aceite e atualização).
+   sim = linha de sim_historicos (só quando a origem da correção é SIM);
+   destaque = html já escapado, mostrado entre o texto de abertura e a tabela */
+function htmlCorrecao(cabCorrecao, detalhes, sim, { titulo, intro, destaque = "", botaoTexto, url, acoes = [], idAcaoNova = 0 }) {
+
+  const linhasAcoes = acoes
+    .map(
+      (a) => `
+      <tr${Number(a.id) === Number(idAcaoNova) ? ' style="background:#fff8e1;"' : ""}>
+        <td style="border:1px solid #ddd; padding:8px; font-size:14px;">
+          <strong>${escapaHtml(TIPO_ACAO_CORRECAO[a.flag_acao] ?? a.flag_acao)}</strong>
+          - ${escapaHtml(STATUS_ACAO_CORRECAO[a.status] ?? a.status)}<br>
+          <span style="white-space:pre-wrap;">${escapaHtml(a.descricao)}</span><br>
+          <span style="font-size:12px; color:#666666;">Auditor: ${escapaHtml(a.audi_nome) || "-"}
+            | Início: ${escapaHtml(a.inicio)}
+            | Executor: ${escapaHtml(a.exec_nome) || "-"}${a.final ? ` | Final: ${escapaHtml(a.final)}` : ""}</span>
+        </td>
+      </tr>`,
+    )
+    .join("");
+
+  const blocoAcoes = acoes.length
+    ? `<h3 style="margin:20px 0 8px 0; color:#333;">Ações</h3>
+       <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${linhasAcoes}</table>`
+    : "";
 
   const mensagens = detalhes
     .map(
@@ -799,7 +831,7 @@ function htmlAceiteCorrecao(usuario, cabCorrecao, detalhes, token, sim) {
     ? `<p style="text-align:right; margin-top:30px;">
          <a href="${escapaHtml(url)}" style="text-decoration:none; font-size:16px;
             font-weight:bold; color:#28a745;">
-           ACEITAR CORREÇÃO
+           ${escapaHtml(botaoTexto)}
          </a>
        </p>`
     : "";
@@ -808,16 +840,17 @@ function htmlAceiteCorrecao(usuario, cabCorrecao, detalhes, token, sim) {
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Aceite de Correção</title>
+  <title>${escapaHtml(titulo)}</title>
 </head>
 <body style="margin:0; padding:0; background-color:#f4f4f4; font-family:Arial, Helvetica, sans-serif;">
   <div style="max-width:640px; margin:20px auto; background-color:#f4f4f4; border-radius:6px;
               border:1px solid #e0e0e0; padding:20px 24px;">
 
-    <h1 style="font-size:20px; margin:0 0 16px 0; color:#333333; text-align:center;">Aceite de Correção</h1>
+    <h1 style="font-size:20px; margin:0 0 16px 0; color:#333333; text-align:center;">${escapaHtml(titulo)}</h1>
 
     <p style="text-align:center; font-size:16px; color:#333333;"><strong>Correção Solicitada Por:</strong> ${escapaHtml(cabCorrecao.sol_nome)}</p>
-    <p style="color:#333333;">Foi incluída uma correção que aguarda aceite. Segue o resumo:</p>
+    <p style="color:#333333;">${escapaHtml(intro)}</p>
+    ${destaque}
 
     <table width="100%" cellpadding="8" cellspacing="0" style="font-size:14px; border-collapse:collapse;">
       <tr style="background:#eef3fb;">
@@ -842,6 +875,7 @@ function htmlAceiteCorrecao(usuario, cabCorrecao, detalhes, token, sim) {
       </tr>
     </table>
 
+    ${blocoAcoes}
     ${blocoMensagens}
     ${botao}
 
@@ -852,6 +886,21 @@ function htmlAceiteCorrecao(usuario, cabCorrecao, detalhes, token, sim) {
   </div>
 </body>
 </html>`;
+}
+
+/* com token, o link leva direto ao aceite (válido por 5 horas) */
+function htmlAceiteCorrecao(usuario, cabCorrecao, detalhes, token, sim) {
+  const base = urlSistema();
+  const url = base && token
+    ? base.concat(`correcoes/aceite?token=${token}&id_cab_correcao=${cabCorrecao.id}`)
+    : base;
+
+  return htmlCorrecao(cabCorrecao, detalhes, sim, {
+    titulo: "Aceite de Correção",
+    intro: "Foi incluída uma correção que aguarda aceite. Segue o resumo:",
+    botaoTexto: "ACEITAR CORREÇÃO",
+    url,
+  });
 }
 
 /* destinatário inicial: e-mail do solicitante da correção */
@@ -956,4 +1005,177 @@ exports.PreparaEmailAceiteCorrecao = async function (usuario, cabCorrecao, detal
   }
 
   return { message: `E-Mail Enviado Com Sucesso! (${enviados})` };
+};
+
+/* texto da ação no e-mail de atualização */
+const ACAO_ATUALIZACAO = {
+  INCLUSAO: "Nova mensagem",
+  ALTERACAO: "Mensagem alterada",
+};
+
+/* avisa a contra-partida de uma mensagem do chat da correção.
+   det = det-correcao gravado; acao = INCLUSAO ou ALTERACAO.
+   Regras: não avisa a primeira mensagem da correção, só vale com status 2 ou mais
+   e o aviso vai só para a outra ponta: autor = solicitante avisa o executor e vice-versa */
+exports.PreparaEmailAtualizacaoCorrecao = async function (det, acao) {
+  const cab = await cabCorrecaoSrv.getCabCorrecao(det.id_empresa, det.id_cab);
+
+  if (!cab) {
+    return { message: "Falha: Correção Não Encontrada!" };
+  }
+
+  if (Number(cab.status) < 2) {
+    return { message: "E-Mail Não Enviado: Correção Ainda Não Foi Aceita." };
+  }
+
+  let destinatario = "";
+  let nomeAutor = "";
+
+  if (Number(det.id_auditor) === Number(cab.id_sol)) {
+    destinatario = (cab.exec_email || "").trim();
+    nomeAutor = cab.sol_nome;
+  } else if (Number(det.id_auditor) === Number(cab.id_exec)) {
+    destinatario = (cab.sol_email || "").trim();
+    nomeAutor = cab.exec_nome;
+  } else {
+    return { message: "E-Mail Não Enviado: Autor Não É Solicitante Nem Executor." };
+  }
+
+  if (!destinatario) {
+    return { message: "Falha: Destinatário Sem E-Mail Cadastrado!" };
+  }
+
+  /* mensagens da correção, da mais antiga para a mais nova */
+  const detalhes = await detCorrecaoSrv.getDetCorrecoes({
+    id_empresa: det.id_empresa,
+    id_cab: det.id_cab,
+    orderby: "000002",
+  });
+
+  /* a primeira mensagem da correção não gera e-mail */
+  if (acao === "INCLUSAO" && detalhes.length <= 1) {
+    return { message: "E-Mail Não Enviado: Primeira Mensagem Da Correção." };
+  }
+
+  /* dados do contrato (razão social e valores) quando a correção vem de um SIM */
+  let sim = null;
+  if (String(cab.origem).toUpperCase() === "SIM" && cab.id_origem) {
+    sim = await simHistoricoSrv.getSim_Historico(cab.id_empresa ?? det.id_empresa, cab.id_origem);
+  }
+
+  const atual = detalhes.find((d) => Number(d.id) === Number(det.id)) ?? det;
+  const textoAcao = ACAO_ATUALIZACAO[acao] ?? "Atualização";
+
+  const destaque = `<div style="border:1px solid #ddd; border-left:4px solid #1a73e8; background:#ffffff;
+                padding:10px 14px; margin:0 0 16px 0; font-size:14px; color:#333333;">
+      <strong>${escapaHtml(textoAcao)} de ${escapaHtml(nomeAutor)}</strong>
+      ${atual.data ? ` - ${escapaHtml(atual.data)}` : ""}<br>
+      <span style="white-space:pre-wrap;">${escapaHtml(atual.mensagem)}</span>
+    </div>`;
+
+  const base = urlSistema();
+
+  const acoes = await acaoCorrecaoSrv.getAcoesCorrecoes({
+    id_empresa: det.id_empresa,
+    id_cab_correcoes: det.id_cab,
+    orderby: "000002",
+  });
+
+  const html = htmlCorrecao(cab, detalhes, sim, {
+    titulo: "Atualização de Correção",
+    intro: `${textoAcao} na correção ${cab.id}. Segue o resumo:`,
+    destaque,
+    botaoTexto: "ACESSAR O SISTEMA",
+    url: base,
+    acoes,
+  });
+
+  try {
+    await enviar({
+      to: destinatario,
+      subject: `Atualização da Correção - ${cab.id}`,
+      html,
+    });
+    return { message: "E-Mail Enviado Com Sucesso!" };
+  } catch (erro) {
+    console.error("Erro ao enviar email de atualização da correção:", erro);
+    return { message: "Falha Ao Enviar E-Mail!" };
+  }
+};
+
+/* avisa a contra-partida de uma ação nova da correção, com o resumo da correção e todas as ações.
+   acao = linha gravada em acoes_correcoes. Mesma regra da mensagem: autor (id_auditor) solicitante
+   avisa o executor e vice-versa; a regra de negócio já garante correção com status 2 ou 3 */
+exports.PreparaEmailAcaoCorrecao = async function (acao) {
+  const cab = await cabCorrecaoSrv.getCabCorrecao(acao.id_empresa, acao.id_cab_correcoes);
+
+  if (!cab) {
+    return { message: "Falha: Correção Não Encontrada!" };
+  }
+
+  let destinatario = "";
+  let nomeAutor = "";
+
+  if (Number(acao.id_auditor) === Number(cab.id_sol)) {
+    destinatario = (cab.exec_email || "").trim();
+    nomeAutor = cab.sol_nome;
+  } else if (Number(acao.id_auditor) === Number(cab.id_exec)) {
+    destinatario = (cab.sol_email || "").trim();
+    nomeAutor = cab.exec_nome;
+  } else {
+    return { message: "E-Mail Não Enviado: Autor Não É Solicitante Nem Executor." };
+  }
+
+  if (!destinatario) {
+    return { message: "Falha: Destinatário Sem E-Mail Cadastrado!" };
+  }
+
+  const detalhes = await detCorrecaoSrv.getDetCorrecoes({
+    id_empresa: acao.id_empresa,
+    id_cab: acao.id_cab_correcoes,
+    orderby: "000002",
+  });
+
+  const acoes = await acaoCorrecaoSrv.getAcoesCorrecoes({
+    id_empresa: acao.id_empresa,
+    id_cab_correcoes: acao.id_cab_correcoes,
+    orderby: "000002",
+  });
+
+  let sim = null;
+  if (String(cab.origem).toUpperCase() === "SIM" && cab.id_origem) {
+    sim = await simHistoricoSrv.getSim_Historico(cab.id_empresa ?? acao.id_empresa, cab.id_origem);
+  }
+
+  const nova = acoes.find((a) => Number(a.id) === Number(acao.id)) ?? acao;
+  const tipo = TIPO_ACAO_CORRECAO[nova.flag_acao] ?? nova.flag_acao;
+
+  const destaque = `<div style="border:1px solid #ddd; border-left:4px solid #f9a825; background:#ffffff;
+                padding:10px 14px; margin:0 0 16px 0; font-size:14px; color:#333333;">
+      <strong>Nova ação de ${escapaHtml(nomeAutor)}: ${escapaHtml(tipo)}</strong>
+      ${nova.inicio ? ` - ${escapaHtml(nova.inicio)}` : ""}<br>
+      <span style="white-space:pre-wrap;">${escapaHtml(nova.descricao)}</span>
+    </div>`;
+
+  const html = htmlCorrecao(cab, detalhes, sim, {
+    titulo: "Atualização de Correção",
+    intro: `Nova ação na correção ${cab.id}. Segue o resumo:`,
+    destaque,
+    botaoTexto: "ACESSAR O SISTEMA",
+    url: urlSistema(),
+    acoes,
+    idAcaoNova: nova.id,
+  });
+
+  try {
+    await enviar({
+      to: destinatario,
+      subject: `Atualização da Correção - ${cab.id}`,
+      html,
+    });
+    return { message: "E-Mail Enviado Com Sucesso!" };
+  } catch (erro) {
+    console.error("Erro ao enviar email de ação da correção:", erro);
+    return { message: "Falha Ao Enviar E-Mail!" };
+  }
 };

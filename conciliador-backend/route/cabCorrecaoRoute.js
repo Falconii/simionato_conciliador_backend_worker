@@ -117,6 +117,12 @@ catch (err)
 router.delete("/:id_empresa/:id",async function(req, res) {
 try
 	{
+		/* só o solicitante da correção exclui */
+		const cab = await cabCorrecaoSrv.getCabCorrecao(req.params.id_empresa,req.params.id);
+		if (cab && cab.id_sol != req.id_usuario)
+		{
+			return res.status(403).json({ message: 'Só O Solicitante Pode Excluir A Correção!' });
+		}
 		await cabCorrecaoSrv.deleteCabCorrecao(req.params.id_empresa,req.params.id);
 		res.status(200).json({ message: 'Correção Excluída Com Sucesso!' });
 }

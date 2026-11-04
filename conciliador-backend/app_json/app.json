@@ -5837,6 +5837,15 @@
                             "validacao": []
                         },
                         {
+                            "name": "id_aguardando_resposta",
+                            "type": "int4",
+                            "length": 0,
+                            "precision": 0,
+                            "nulo": "N",
+                            "padrao": 0,
+                            "validacao": []
+                        },
+                        {
                             "name": "tarefa",
                             "type": "varchar",
                             "length": 255,
@@ -6002,6 +6011,13 @@
                                 "padrao": 0
                             },
                             {
+                                "name": "id_aguardando_resposta",
+                                "filtro": "S",
+                                "atividador": " !== 0 ",
+                                "tipo": "number",
+                                "padrao": 0
+                            },
+                            {
                                 "name": "tarefa",
                                 "filtro": "S",
                                 "atividador": " !== '' ",
@@ -6017,6 +6033,13 @@
                             },
                             {
                                 "name": "status",
+                                "filtro": "S",
+                                "atividador": " !== '' ",
+                                "tipo": "string",
+                                "padrao": ""
+                            },
+                            {
+                                "name": "flag_acao",
                                 "filtro": "S",
                                 "atividador": " !== '' ",
                                 "tipo": "string",

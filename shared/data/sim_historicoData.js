@@ -122,6 +122,8 @@ exports.getSim_Historico = function(id_empresa,id){
 			,  coalesce(cab.id_sol,0) as corr_id_sol
             ,  coalesce(cab.id_exec,0) as corr_id_exec
             ,  coalesce(cab.status,'') as corr_status
+            ,  coalesce(cab.status_assinatura_cliente,'') as corr_status_assinatura_cliente
+            ,  coalesce(cab.status_assinatura_gp,'') as corr_status_assinatura_gp
  			FROM sim_historicos sim 	     
 			left join cab_correcoes cab on cab.id_empresa = sim.id_empresa and cab.origem = 'SIM' and cab.id_origem = sim.id
 			left join assinaturas ass on ass.id_empresa = sim.id_empresa and ass.id_sim = sim.id
@@ -230,6 +232,35 @@ if (params) {
 					where += `trim(sim.modoas)  = '${params.modoas.trim()}' `;
 				}
 
+				/* assinaturas da correção do SIM (cab_correcoes): A = falta alguma, C = falta do cliente, G = falta da GP, O = as duas OK.
+				   só traz SIM que tem correção (cab.id preenchido) */
+				const assCorrecao = String(params.assinatura_correcao ?? '').trim().toUpperCase();
+				const condAssCorrecao = {
+					A: `(cab.status_assinatura_cliente = 'N' or cab.status_assinatura_gp = 'N')`,
+					C: `cab.status_assinatura_cliente = 'N'`,
+					G: `cab.status_assinatura_gp = 'N'`,
+					O: `(cab.status_assinatura_cliente = 'S' and cab.status_assinatura_gp = 'S')`,
+				}[assCorrecao];
+				if (condAssCorrecao) {
+					if (where != "") where += " and ";
+					where += `${condAssCorrecao} `;
+				}
+
+				/* correção do SIM aguardando resposta de um usuário (cab_correcoes.id_aguardando_resposta) */
+				const idAguardando = Number(params.id_aguardando_resposta);
+				if (Number.isInteger(idAguardando) && idAguardando > 0) {
+					if (where != "") where += " and ";
+					where += `cab.id_aguardando_resposta = ${idAguardando} `;
+				}
+
+				/* ação pendente na correção do SIM (status '1' de acoes_correcoes): '*' = qualquer ação, ou o tipo da ação */
+				const flagAcao = String(params.flag_acao ?? '').trim();
+				if (flagAcao === '*' || /^[0-9A-Za-z]$/.test(flagAcao)) {
+					if (where != "") where += " and ";
+					const filtroTipo = flagAcao === '*' ? '' : ` and aco.flag_acao = '${flagAcao}'`;
+					where += `exists (select 1 from acoes_correcoes aco where aco.id_empresa = cab.id_empresa and aco.id_cab_correcoes = cab.id and aco.status = '1'${filtroTipo}) `;
+				}
+
 				/* 2020-T1 */
 				if (params.trimestre && params.trimetro !== ''){
                    if (where != "") where += " and ";
@@ -313,6 +344,8 @@ if (params) {
 			,  coalesce(cab.id_sol,0) as corr_id_sol
             ,  coalesce(cab.id_exec,0) as corr_id_exec
             ,  coalesce(cab.status,'') as corr_status
+            ,  coalesce(cab.status_assinatura_cliente,'') as corr_status_assinatura_cliente
+            ,  coalesce(cab.status_assinatura_gp,'') as corr_status_assinatura_gp
 			FROM sim_historicos sim 
 			left join cab_correcoes cab on cab.id_empresa = sim.id_empresa and cab.origem = 'SIM' and cab.id_origem = sim.id   
             left join assinaturas ass on ass.id_empresa = sim.id_empresa and ass.id_sim = sim.id
