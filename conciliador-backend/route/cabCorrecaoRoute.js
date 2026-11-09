@@ -7,6 +7,19 @@ const usuarioSrv = require("../../shared/service/usuarioService");
 const tokenSrv = require("../../shared/service/tokenService");
 const response = require("../../shared/util/respostaPadrao.js");
 router.use(autenticarToken);
+/* ROTA PENDÊNCIAS do usuário logado: o usuário vem do token, nunca do cliente.
+   { aguardando_resposta: n, abertas: n } */
+router.get("/pendencias",async function(req, res) {
+try
+	{
+		const pendencias = await cabCorrecaoSrv.getPendencias(req.id_empresa, req.id_usuario);
+		res.status(200).json(pendencias);
+	}
+catch (err)
+	{
+		res.status(500).json({ erro: 'BAK-END', tabela: 'cab_correcao', message: err.message });
+	}
+})
 /* ROTA GETONE cab_correcao */
 router.get("/:id_empresa/:id",async function(req, res) {
 try

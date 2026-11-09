@@ -131,21 +131,64 @@ exports.getSim_Historico = function(id_empresa,id){
 			 where sim.id_empresa = ${id_empresa} and  sim.id = ${id}  `;
 	return  db.oneOrNone(strSql);
 }
+/* normaliza os parâmetros da consulta: parâmetro ausente ou nulo (filtro salvo antes de o campo existir)
+   vira o valor "sem filtro", e as aspas simples dos textos são escapadas, pois entram direto no SQL */
+function normalizaParametrosSimHistorico(p){
+	const texto = (v) => (v === undefined || v === null) ? '' : String(v).trim().replace(/'/g, "''");
+	const inteiro = (v, padrao) => { const n = Number(v); return Number.isFinite(n) ? Math.trunc(n) : padrao; };
+
+	const n = { ...p };
+	n.id_empresa = inteiro(p.id_empresa, 0);
+	n.id = inteiro(p.id, 0);
+	n.codemp = inteiro(p.codemp, 0);
+	n.numpro = inteiro(p.numpro, 0);
+	n.id_contrato = inteiro(p.id_contrato, 0);
+	n.cond_pagto = inteiro(p.cond_pagto, -1);
+	n.id_aguardando_resposta = inteiro(p.id_aguardando_resposta, 0);
+	n.pagina = inteiro(p.pagina, 0);
+	n.tamPagina = inteiro(p.tamPagina, 50);
+
+	n.cod_cli_sim = texto(p.cod_cli_sim);
+	n.status_arquivos = texto(p.status_arquivos);
+	n.upload_cliente = texto(p.upload_cliente);
+	n.descrpasso = texto(p.descrpasso);
+	n.modoas = texto(p.modoas);
+	n.acordo = texto(p.acordo);
+	n.flag_acao = texto(p.flag_acao);
+	n.assinatura_correcao = texto(p.assinatura_correcao);
+	n.orderby = texto(p.orderby);
+	n.contador = texto(p.contador);
+	/* sem valor, "sem filtro" (antes o texto vazio filtrava e escondia SIM sem assinatura) */
+	n.status_assinatura = texto(p.status_assinatura) || 'F';
+	n.obs_assinatura = texto(p.obs_assinatura) || 'SEM FILTRO';
+	/* competência só vale completa (MM/AAAA, ou 00/AAAA para o ano inteiro); parcial é ignorada */
+	const datini = texto(p.datini);
+	n.datini = /^\d{2}\/\d{4}$/.test(datini) ? datini : '';
+	n.trimestre = p.trimestre ? texto(p.trimestre) : p.trimestre;
+	return n;
+}
+
 /* CRUD GET ALL*/
 exports.getSim_Historicos = function(params){
-console.log("getSim_Historicos",params);	
+console.log("getSim_Historicos",params);
 if (params) {
-	where = "";
-	orderby = "";
-	paginacao = "";
+	params = normalizaParametrosSimHistorico(params);
+	let where = "";
+	let orderby = "";
+	let paginacao = "";
+	let strSql;
+	let sqlStr;
 
 	try
 		{
 				if(params.orderby == '') orderby = 'sim.id_empresa,sim.id';
-				if(params.orderby == '000000') orderby = 'sim.id_empresa,sim.codemp,sim.cod_cli_sim';
-				if(params.orderby == '000001') orderby = 'sim.id_empresa,sim.codemp,sim.datini';
-				if(params.orderby == '000002') orderby = 'sim.id_empresa,sim.codemp,sim.cod_cli_sim';
-				if(params.orderby == '000003') orderby = 'sim.id_empresa,sim.codemp,sim.numpro';
+				/* sim.id no fim desempata: sem ele a ordem das linhas iguais muda de uma consulta para outra
+				   e a paginação repete ou pula registros */
+				if(params.orderby == '000000') orderby = 'sim.id_empresa,sim.codemp,sim.cod_cli_sim,sim.id';
+				if(params.orderby == '000001') orderby = 'sim.id_empresa,sim.codemp,sim.datini,sim.id';
+				if(params.orderby == '000002') orderby = 'sim.id_empresa,sim.codemp,sim.cod_cli_sim,sim.id';
+				if(params.orderby == '000003') orderby = 'sim.id_empresa,sim.codemp,sim.numpro,sim.id';
+				if (orderby == "") orderby = 'sim.id_empresa,sim.id';
 
 				if (orderby != "") orderby = " order by " + orderby;
 				if(params.id_empresa  !== 0 ){
@@ -211,25 +254,38 @@ if (params) {
 				}
 
 				if(params.cond_pagto  !== -1 ){
+					/* possuipagtoliberado é a quantidade de pagamentos liberados: 0 = Abatimentos, 1 = Outras (as demais) */
 					if (params.cond_pagto  == 0) {
 						if (where != "") where += " and ";
 						where +=  `sim.possuipagtoliberado = 0 `;
-					} 
+					} else if (params.cond_pagto  == 1) {
+						if (where != "") where += " and ";
+						where +=  `sim.possuipagtoliberado > 0 `;
+					}
 				}
 
+				/* SIM sem linha em assinaturas não teve upload do cliente: vale como '0' */
 				if (params.upload_cliente !== '') {
 					if (where != "") where += " and ";
-					where += `trim(ass.upload_cliente)  = '${params.upload_cliente.trim()}' `;
+					where += `coalesce(trim(ass.upload_cliente),'0')  = '${params.upload_cliente}' `;
+				}
+
+				/* número do acordo do SIM (sim_acordos); antes o filtro era enviado mas ignorado */
+				if (params.acordo !== '') {
+					if (where != "") where += " and ";
+					where += `exists (select 1 from sim_acordos aco_sim where aco_sim.id_empresa = sim.id_empresa and aco_sim.id_sim = sim.id and aco_sim.acordo ilike '%${params.acordo}%') `;
 				}
 
 				if (params.descrpasso !== '') {
 					if (where != "") where += " and ";
-					where += `trim(sim.descrpasso)  = '${params.descrpasso.trim()}' `;
+					/* sem trim(): a função na coluna esconde as estatísticas do banco, que estimava 1 linha em vez de 47 mil
+					   e escolhia um plano que levava mais de 10 segundos para trazer a primeira página */
+					where += `sim.descrpasso  = '${params.descrpasso}' `;
 				}
 
 				if (params.modoas !== '') {
 					if (where != "") where += " and ";
-					where += `trim(sim.modoas)  = '${params.modoas.trim()}' `;
+					where += `sim.modoas  = '${params.modoas}' `;
 				}
 
 				/* assinaturas da correção do SIM (cab_correcoes): A = falta alguma, C = falta do cliente, G = falta da GP, O = as duas OK.
@@ -272,7 +328,7 @@ if (params) {
 				}
         } catch(err){
 	      console.log("Erro No Parametros",err);
-		  throw new error(err)
+		  throw err
     }
 	if (params.contador == 'S') {
 		sqlStr = `SELECT COALESCE(COUNT(*),0)::INT4 as total 

@@ -42,7 +42,8 @@ const ORDENACAO = {
 	'000003': 'cab_correcao.id_empresa,cab_correcao.cadastr',
 	'000004': 'cab_correcao.id_empresa,cab_correcao.status',
 	'000005': 'cab_correcao.id_empresa,sol.razao,cab_correcao.id',
-	'000006': 'cab_correcao.id_empresa,exec.razao,cab_correcao.id'
+	'000006': 'cab_correcao.id_empresa,exec.razao,cab_correcao.id',
+	'000007': 'cab_correcao.id_empresa,cab_correcao.id desc'
 };
 
 /* Converte para inteiro; se não for número inteiro, vai 0 */
@@ -128,6 +129,19 @@ exports.getResumoExecutorSolicitante = function(params){
 			order by ${orderbySql} `;
 	return db.manyOrNone(strSql, valores);
 };
+/* PENDÊNCIAS do usuário (sino da tela): o contador é sempre calculado no banco, e qualquer canal
+   (consulta periódica, SSE, WebSocket) só precisa dizer ao cliente para chamar de novo.
+   aguardando_resposta = correções em andamento cuja próxima resposta é dele (a outra ponta escreveu por último);
+   abertas = todas as correções dele, como solicitante ou executor, que não estão encerradas */
+exports.getPendencias = function(id_empresa, id_usuario){
+	const strSql = `select
+				count(*) filter (where cab_correcao.id_aguardando_resposta = $2 and cab_correcao.status in ('2','3'))::int4 as aguardando_resposta
+			,	count(*) filter (where cab_correcao.status <> '9')::int4 as abertas
+			from cab_correcoes cab_correcao
+			where cab_correcao.id_empresa = $1
+			  and (cab_correcao.id_sol = $2 or cab_correcao.id_exec = $2) `;
+	return db.one(strSql, [id_empresa, id_usuario]);
+};
 /* CRUD GET ALL*/
 exports.getCabCorrecoes = function(params){
 if (params) {
@@ -145,6 +159,18 @@ if (params) {
 	condicaoNumero('cab_correcao.id_exec', params.id_exec, condicoes, valores);
 	condicaoNumero('cab_correcao.id_aguardando_resposta', params.id_aguardando_resposta, condicoes, valores);
 	condicaoTexto('cab_correcao.tarefa', params.tarefa, params.sharp, condicoes, valores);
+
+	/* correções em que o usuário é o solicitante OU o executor (id_sol e id_exec valem juntos como E) */
+	const idParticipante = toInt(params.id_participante);
+	if (idParticipante !== 0) {
+		valores.push(idParticipante);
+		condicoes.push(`(cab_correcao.id_sol = $${valores.length} or cab_correcao.id_exec = $${valores.length})`);
+	}
+
+	/* só as correções em aberto: tudo, menos Encerrada (9) */
+	if (String(params.somente_abertas ?? '').trim().toUpperCase() === 'S') {
+		condicoes.push(`cab_correcao.status <> '9'`);
+	}
 
 	const cadastr = String(params.cadastr ?? '').trim();
 	if (cadastr !== '') {
