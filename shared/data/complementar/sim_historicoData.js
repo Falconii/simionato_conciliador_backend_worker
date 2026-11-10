@@ -302,8 +302,9 @@ exports.getSim_Assi_Sintetico = function(params) {
                    ,sim.id                      as sim_id
                    ,sim.qtd_contratos           as sim_qtd_contratos
                    ,sim.nomcli                  as sim_nomcli
+                   ,sim.possuipagtoliberado     as sim_possuipagtoliberado
                    ,sim.valorsazonal            as sim_valor_sazonal
-                   ,to_char(sim.datini,'MM/YY') AS sim_data 
+                   ,to_char(sim.datini,'MM/YY') AS sim_data
                    ,sim.numpro                  as sim_proposta
                    ,sim.codemp                  as sim_codemp
                    ,coalesce(resp.razao,'')     as resp_razao

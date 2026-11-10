@@ -54,11 +54,11 @@ catch (err)
 }
 };
 //* CRUD - DELETE - SERVICE */
-exports.deleteCabCorrecao = async function(id_empresa,id){
+exports.deleteCabCorrecao = async function(id_empresa,id,id_usuario){
 try
 {
 	await regras.cabCorrecao_Exclusao(id_empresa,id);
-	return await cabCorrecaoData.deleteCabCorrecao(id_empresa,id);
+	return await cabCorrecaoData.deleteCabCorrecao(id_empresa,id,id_usuario);
 }
 catch (err)
 {

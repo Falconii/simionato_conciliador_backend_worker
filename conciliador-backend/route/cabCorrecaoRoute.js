@@ -130,13 +130,14 @@ catch (err)
 router.delete("/:id_empresa/:id",async function(req, res) {
 try
 	{
-		/* só o solicitante da correção exclui */
+		/* só o solicitante da correção exclui (a tela avisa antes; aqui é a trava de verdade).
+		   A regra de status 0 ou 1 fica em cabCorrecao_Exclusao */
 		const cab = await cabCorrecaoSrv.getCabCorrecao(req.params.id_empresa,req.params.id);
 		if (cab && cab.id_sol != req.id_usuario)
 		{
-			return res.status(403).json({ message: 'Só O Solicitante Pode Excluir A Correção!' });
+			return res.status(403).json({ message: 'Somente O Usuário Solicitante Pode Excluir' });
 		}
-		await cabCorrecaoSrv.deleteCabCorrecao(req.params.id_empresa,req.params.id);
+		await cabCorrecaoSrv.deleteCabCorrecao(req.params.id_empresa,req.params.id,req.id_usuario);
 		res.status(200).json({ message: 'Correção Excluída Com Sucesso!' });
 }
 catch (err)

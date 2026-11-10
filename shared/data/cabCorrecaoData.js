@@ -25,6 +25,8 @@ const camposSelect = `
 			,  coalesce(agu.razao,'')  as agu_nome
 			,  coalesce(sim.codemp,0) as sim_cod_emp
 			,  coalesce(sim.numpro,0) as sim_num_pro
+			,  coalesce(sim.nomcli,'') as sim_nomcli
+			,  sim.possuipagtoliberado as sim_possuipagtoliberado
 			,  (select count(*) from acoes_correcoes aco where aco.id_empresa = cab_correcao.id_empresa and aco.id_cab_correcoes = cab_correcao.id and aco.flag_acao = '1' and aco.status = '1')::int4 as acoes_upload_pendentes
 			,  (select count(*) from acoes_correcoes aco where aco.id_empresa = cab_correcao.id_empresa and aco.id_cab_correcoes = cab_correcao.id and aco.flag_acao = '2' and aco.status = '1')::int4 as acoes_exclusao_pendentes `;
 
@@ -165,6 +167,18 @@ if (params) {
 	if (idParticipante !== 0) {
 		valores.push(idParticipante);
 		condicoes.push(`(cab_correcao.id_sol = $${valores.length} or cab_correcao.id_exec = $${valores.length})`);
+	}
+
+	/* razão social do cliente do SIM (contém, sem diferenciar maiúsculas); só traz correção de SIM */
+	condicaoTexto('sim.nomcli', params.sim_nomcli, params.sharp, condicoes, valores);
+
+	/* condição de pagamento do SIM: '0' = Abatimento (nenhum pagamento liberado), '1' = Outros (algum liberado);
+	   vazio = sem filtro. Aceita texto ou número, pois vem do parâmetro salvo */
+	const condPagto = String(params.cond_pagto ?? '').trim();
+	if (condPagto === '0') {
+		condicoes.push(`sim.possuipagtoliberado = 0`);
+	} else if (condPagto === '1') {
+		condicoes.push(`sim.possuipagtoliberado > 0`);
 	}
 
 	/* só as correções em aberto: tudo, menos Encerrada (9) */
@@ -312,12 +326,30 @@ exports.atualizaAguardandoResposta = function(id_empresa, id_cab){
 	return db.none(strSql, [id_empresa, id_cab]);
 };
 /* CRUD - DELETE */
-/* exclui as mensagens (det_correcoes) junto com o cabeçalho, na mesma transação */
-exports.deleteCabCorrecao = function(id_empresa,id){
+/* coluna de assinaturas que liga ao documento de cada origem da correção (whitelist: só estas entram no SQL) */
+const COLUNA_ASSINATURA_POR_ORIGEM = {
+	SIM: 'id_sim',
+	PAF: 'id_cab',
+	ARKER: 'id_arker'
+};
+
+/* exclui a correção na mesma transação: as mensagens (det_correcoes), o cabeçalho e a assinatura do documento,
+   que volta para 'S' porque não resta nenhuma correção a fazer. id_usuario (opcional) vai para user_update */
+exports.deleteCabCorrecao = function(id_empresa,id,id_usuario){
 	return db.tx(async t => {
+		const cab = await t.oneOrNone(`select origem, id_origem from cab_correcoes
+				 where id_empresa = $1 and  id = $2  `, [id_empresa, id]);
+
 		await t.none(`delete from det_correcoes
 				 where id_empresa = $1 and  id_cab = $2  `, [id_empresa, id]);
-		return t.oneOrNone(`delete from cab_correcoes
+		const excluida = await t.oneOrNone(`delete from cab_correcoes
 				 where id_empresa = $1 and  id = $2  `, [id_empresa, id]);
+
+		const coluna = cab ? COLUNA_ASSINATURA_POR_ORIGEM[String(cab.origem ?? '').trim().toUpperCase()] : undefined;
+		if (coluna && toInt(cab.id_origem) !== 0) {
+			await t.none(`update assinaturas set resposta = 'S', user_update = coalesce($3, user_update)
+					 where id_empresa = $1 and ${coluna} = $2 `, [id_empresa, cab.id_origem, id_usuario ?? null]);
+		}
+		return excluida;
 	});
 };
