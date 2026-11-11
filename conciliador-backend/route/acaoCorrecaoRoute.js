@@ -12,6 +12,17 @@ function avisaNovaAcao(acao, registro) {
 		.catch((err) => console.error('Erro no e-mail da ação da correção:', err));
 }
 router.use(autenticarToken);
+
+/* a ação só é alterada ou excluída por quem a criou (user_insert). Responde 403 e devolve true quando não é o criador;
+   ação inexistente segue para a regra de negócio, que já devolve a mensagem própria */
+async function naoECriador(req, id_empresa, id, res, verbo) {
+	const atual = await acaoCorrecaoSrv.getAcaoCorrecao(id_empresa, id);
+	if (atual && Number(atual.user_insert) !== Number(req.id_usuario)) {
+		res.status(403).json({ message: `Somente O Usuário Que Criou A Ação Pode ${verbo}` });
+		return true;
+	}
+	return false;
+}
 /* ROTA GETONE acao_correcao */
 router.get("/:id_empresa/:id",async function(req, res) {
 try
@@ -97,7 +108,8 @@ router.put("/",async function(req, res) {
 try
 	{
 		const acao = req.body;
-		const registro = await acaoCorrecaoSrv.updateAcaoCorrecao(acao);
+		if (await naoECriador(req, acao.id_empresa, acao.id, res, 'Alterar')) return;
+			const registro = await acaoCorrecaoSrv.updateAcaoCorrecao(acao);
 		if (registro == null)
 		{
 			res.status(409).json({ message: 'Ação de Correção Alterada Com Sucesso!' });
@@ -123,7 +135,8 @@ catch (err)
 router.delete("/:id_empresa/:id",async function(req, res) {
 try
 	{
-		await acaoCorrecaoSrv.deleteAcaoCorrecao(req.params.id_empresa,req.params.id);
+		if (await naoECriador(req, req.params.id_empresa, req.params.id, res, 'Excluir')) return;
+			await acaoCorrecaoSrv.deleteAcaoCorrecao(req.params.id_empresa,req.params.id);
 		res.status(200).json({ message: 'Ação de Correção Excluída Com Sucesso!' });
 }
 catch (err)

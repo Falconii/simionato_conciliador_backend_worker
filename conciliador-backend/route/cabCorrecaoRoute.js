@@ -313,6 +313,72 @@ router.post("/ajusta_status",async function(req, res) {
 	},
 );
 
+/* ROTA ENCERRAMENTO: passa a correção para 9 (Encerrada). Só o solicitante, e só com status 2 ou 3.
+   Corpo: { "id_cab_correcao": 1 } */
+router.post("/encerrar",async function(req, res) {
+	try {
+		const id_cab_correcao = Number(req.body?.id_cab_correcao);
+		if (!Number.isInteger(id_cab_correcao) || id_cab_correcao <= 0) {
+			return response.validationError(res, ["id_cab_correcao"]);
+		}
+
+		const r = await cabCorrecaoSrv.encerrarCabCorrecao(req.id_empresa, id_cab_correcao, req.id_usuario);
+		if (!r.ok) {
+			return response.error(res, r.mensagem, r.codigo, "");
+		}
+
+		const cab = await cabCorrecaoSrv.getCabCorrecao(req.id_empresa, id_cab_correcao);
+		return response.success(res, r.mensagem, { cabCorrecao: cab });
+	} catch (err) {
+		if (err.name == "MyExceptionDB") {
+			res.status(409).json(err);
+		} else {
+			res.status(500).json({ erro: "BAK-END", tabela: "Cab-Correcao", message: err.message });
+		}
+	}
+});
+
+/* ROTA ACEITE EM LOTE: o usuário logado vira executor das correções com status 1 que ele pode aceitar.
+   Só atualiza o banco (sem e-mail). Corpo: { "ids": [1,2,3] }  ou  { "filtro": { ...mesmos campos da consulta } }
+   Retorno: { total, aceitas, recusadas, itens:[{ id, aceita, mensagem }] } */
+router.post("/aceite_lote",async function(req, res) {
+	try {
+		const { ids, filtro } = req.body || {};
+		const max = cabCorrecaoSrv.MAX_ACEITE_LOTE;
+		let lista;
+		let totalFiltro;
+
+		if (Array.isArray(ids)) {
+			lista = [...new Set(ids.map(Number))];
+			if (lista.length === 0 || lista.some((id) => !Number.isInteger(id) || id <= 0)) {
+				return response.error(res, "Informe Ids De Correção Válidos!", 400, "");
+			}
+			if (lista.length > max) {
+				return response.error(res, `Aceite Em Lote Aceita No Máximo ${max} Correções Por Vez!`, 400, "");
+			}
+		} else if (filtro && typeof filtro === 'object') {
+			const selecao = await cabCorrecaoSrv.selecionarParaAceite(req.id_empresa, req.id_usuario, filtro);
+			lista = selecao.ids;
+			totalFiltro = selecao.total_filtro;
+		} else {
+			return response.error(res, "Informe Os Ids Ou O Filtro Das Correções!", 400, "");
+		}
+
+		const resultado = await cabCorrecaoSrv.aceitarCabCorrecoes(req.id_empresa, req.id_usuario, lista);
+		if (totalFiltro !== undefined) {
+			resultado.total_filtro = totalFiltro;
+		}
+
+		return response.success(res, `${resultado.aceitas} De ${resultado.total} Correções Aceitas!`, resultado);
+	} catch (err) {
+		if (err.name == "MyExceptionDB") {
+			res.status(409).json(err);
+		} else {
+			res.status(500).json({ erro: "BAK-END", tabela: "Cab-Correcao", message: err.message });
+		}
+	}
+});
+
 router.post("/aceite_cabcorrecao",async function(req, res) {
 /*
 	{

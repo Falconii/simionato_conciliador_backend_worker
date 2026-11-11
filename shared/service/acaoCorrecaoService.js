@@ -1,5 +1,6 @@
 /* SERVICE acao_correcao */
 const acaoCorrecaoData = require('../../shared/data/acaoCorrecaoData');
+const cabCorrecaoData = require('../../shared/data/cabCorrecaoData');
 const validacao = require('../../shared/util/validacao');
 const parametros = require('../../shared/util/acaoCorrecaoParametros');
 const erroDB = require('../../shared/util/userfunctiondb');
@@ -19,7 +20,10 @@ try
 {
 	await regras.acaoCorrecao_Inclusao(acao);
 	validacao.Validacao(TABELA,acao, parametros.acaoCorrecao());
-	return await acaoCorrecaoData.insertAcaoCorrecao(acao);
+	const nova = await acaoCorrecaoData.insertAcaoCorrecao(acao);
+	/* com ação pendente a correção Em Andamento (2) passa a Aceita - Aguardando Ação (3) */
+	await cabCorrecaoData.marcarAguardandoAcao(acao.id_empresa, acao.id_cab_correcoes);
+	return nova;
 }
 catch (err)
 {
@@ -32,7 +36,18 @@ try
 {
 	await regras.acaoCorrecao_Alteracao(acao);
 	validacao.Validacao(TABELA,acao, parametros.acaoCorrecao());
-	return await acaoCorrecaoData.updateAcaoCorrecao(acao);
+	const atualizada = await acaoCorrecaoData.updateAcaoCorrecao(acao);
+	if (atualizada) {
+		if (String(atualizada.status) === '1') {
+			/* ação voltou a ficar pendente */
+			await cabCorrecaoData.marcarAguardandoAcao(atualizada.id_empresa, atualizada.id_cab_correcoes);
+		} else {
+			/* ação concluída: se não restar ação pendente nem assinatura faltando, a correção é encerrada;
+			   senão continua como está. O UPDATE de encerramento já confere as duas condições */
+			await cabCorrecaoData.encerrarCabCorrecao(atualizada.id_empresa, atualizada.id_cab_correcoes, acao.user_update);
+		}
+	}
+	return atualizada;
 }
 catch (err)
 {
@@ -44,7 +59,13 @@ exports.deleteAcaoCorrecao = async function(id_empresa,id){
 try
 {
 	await regras.acaoCorrecao_Exclusao(id_empresa,id);
-	return await acaoCorrecaoData.deleteAcaoCorrecao(id_empresa,id);
+	const existente = await acaoCorrecaoData.getAcaoCorrecao(id_empresa,id);
+	const excluida = await acaoCorrecaoData.deleteAcaoCorrecao(id_empresa,id);
+	/* sem ação pendente, a correção Aceita - Aguardando Ação (3) volta para Em Andamento (2) */
+	if (existente) {
+		await cabCorrecaoData.voltarParaEmAndamento(id_empresa, existente.id_cab_correcoes);
+	}
+	return excluida;
 }
 catch (err)
 {

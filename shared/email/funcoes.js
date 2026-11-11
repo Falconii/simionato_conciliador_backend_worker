@@ -934,8 +934,9 @@ exports.enviarEmailAceiteCorrecao = async function (usuario, cabCorrecao, detalh
   }
 };
 
-/* grupos: solicitante do 902 ou 906 avisa o grupo 1 e solicitante do 1 avisa o 902 */
-const GRUPO_DESTINO_ACEITE = { 902: 1, 906: 1, 1: 902 };
+/* grupos: solicitante do 902 ou 906 avisa o grupo 1 e solicitante do 1 avisa o 902
+   (a regra fica em util/grupoAceite, que o aceite em lote também usa) */
+const { GRUPO_DESTINO_ACEITE } = require("../../shared/util/grupoAceite");
 
 /* destinatários cadastrados em correcoes_emails que pertencem ao grupo de destino */
 async function destinatariosAceite(usuario) {

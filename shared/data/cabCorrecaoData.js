@@ -1,6 +1,7 @@
 /* DATA cab_correcao */
 const db = require('../../shared/infra/database');
 const shared = require("../../shared/util/shared.js");
+const { sqlPodeAceitar } = require("../../shared/util/grupoAceite");
 
 /* SELECT compartilhado pelas consultas */
 const camposSelect = `
@@ -16,6 +17,7 @@ const camposSelect = `
 			,  cab_correcao.status as status
 			,  cab_correcao.status_assinatura_cliente as status_assinatura_cliente
 			,  cab_correcao.status_assinatura_gp as status_assinatura_gp
+			,  coalesce(to_char(cab_correcao.dt_encerramento at time zone 'America/Sao_Paulo', 'DD/MM/YYYY HH24:MI:SS'), '') as dt_encerramento
 			,  cab_correcao.user_insert as user_insert
 			,  cab_correcao.user_update as user_update
 			,  coalesce(exec.razao,'')  as exec_nome
@@ -134,11 +136,13 @@ exports.getResumoExecutorSolicitante = function(params){
 /* PENDÊNCIAS do usuário (sino da tela): o contador é sempre calculado no banco, e qualquer canal
    (consulta periódica, SSE, WebSocket) só precisa dizer ao cliente para chamar de novo.
    aguardando_resposta = correções em andamento cuja próxima resposta é dele (a outra ponta escreveu por último);
-   abertas = todas as correções dele, como solicitante ou executor, que não estão encerradas */
+   abertas = todas as correções dele, como solicitante ou executor, que não estão encerradas;
+   pode_aceitar = o usuário está cadastrado em correcoes_emails (condição para aceitar, mesma regra do e-mail) */
 exports.getPendencias = function(id_empresa, id_usuario){
 	const strSql = `select
 				count(*) filter (where cab_correcao.id_aguardando_resposta = $2 and cab_correcao.status in ('2','3'))::int4 as aguardando_resposta
 			,	count(*) filter (where cab_correcao.status <> '9')::int4 as abertas
+			,	exists (select 1 from correcoes_emails ce where ce.id_empresa = $1 and ce.id_auditor = $2) as pode_aceitar
 			from cab_correcoes cab_correcao
 			where cab_correcao.id_empresa = $1
 			  and (cab_correcao.id_sol = $2 or cab_correcao.id_exec = $2) `;
@@ -179,6 +183,14 @@ if (params) {
 		condicoes.push(`sim.possuipagtoliberado = 0`);
 	} else if (condPagto === '1') {
 		condicoes.push(`sim.possuipagtoliberado > 0`);
+	}
+
+	/* correções que o usuário pode aceitar: cadastrado em correcoes_emails e do grupo de destino do solicitante
+	   (mesma regra do e-mail de aceite, em util/grupoAceite) */
+	const aceitavelPor = toInt(params.aceitavel_por);
+	if (aceitavelPor !== 0) {
+		valores.push(aceitavelPor);
+		condicoes.push(sqlPodeAceitar('sol', 'cab_correcao', valores.length));
 	}
 
 	/* só as correções em aberto: tudo, menos Encerrada (9) */
@@ -326,6 +338,77 @@ exports.atualizaAguardandoResposta = function(id_empresa, id_cab){
 	return db.none(strSql, [id_empresa, id_cab]);
 };
 /* CRUD - DELETE */
+/* ENCERRAMENTO: passa a correção para 9 (Encerrada). O UPDATE é condicional (só de 2 ou 3), então duas pessoas
+   encerrando ao mesmo tempo não se atropelam: só uma recebe a linha de volta. Ninguém mais é aguardado depois do
+   encerramento, por isso id_aguardando_resposta volta a 0 */
+exports.encerrarCabCorrecao = function(id_empresa, id, id_usuario){
+	/* só encerra sem assinatura pendente ('N') e sem ação pendente (status '1'): a regra também está no UPDATE,
+	   e não só na checagem do serviço, para valer mesmo se algo mudar entre a checagem e o encerramento */
+	const strSql = `update cab_correcoes cab
+			set status = '9', id_aguardando_resposta = 0, dt_encerramento = now(), user_update = $3
+			where cab.id_empresa = $1 and cab.id = $2 and cab.status in ('2','3')
+			  and coalesce(cab.status_assinatura_cliente,'') <> 'N'
+			  and coalesce(cab.status_assinatura_gp,'') <> 'N'
+			  and not exists (select 1 from acoes_correcoes aco
+			                   where aco.id_empresa = cab.id_empresa and aco.id_cab_correcoes = cab.id and aco.status = '1')
+			returning cab.id, cab.origem, cab.id_origem `;
+	/* na mesma transação, a assinatura do documento volta para 'S' e a obs é limpa:
+	   encerrada, não resta nenhuma correção a fazer */
+	return db.tx(async t => {
+		const cab = await t.oneOrNone(strSql, [id_empresa, id, id_usuario]);
+		if (!cab) {
+			return null;
+		}
+		const coluna = COLUNA_ASSINATURA_POR_ORIGEM[String(cab.origem ?? '').trim().toUpperCase()];
+		if (coluna && toInt(cab.id_origem) !== 0) {
+			await t.none(`update assinaturas set resposta = 'S', obs = '', user_update = coalesce($3, user_update)
+					 where id_empresa = $1 and ${coluna} = $2 `, [id_empresa, cab.id_origem, id_usuario ?? null]);
+		}
+		return { id: cab.id };
+	});
+};
+
+/* incluída uma ação, a correção Em Andamento (2) passa para Aceita - Aguardando Ação (3).
+   UPDATE condicional: quem já está em 3 (ou em outra situação) não muda */
+exports.marcarAguardandoAcao = function(id_empresa, id){
+	return db.oneOrNone(`update cab_correcoes set status = '3'
+			where id_empresa = $1 and id = $2 and status = '2'
+			  and exists (select 1 from acoes_correcoes aco
+			               where aco.id_empresa = $1 and aco.id_cab_correcoes = $2 and aco.status = '1')
+			returning id `, [id_empresa, id]);
+};
+
+/* sem ação pendente, a correção Aceita - Aguardando Ação (3) volta para Em Andamento (2) */
+exports.voltarParaEmAndamento = function(id_empresa, id){
+	return db.oneOrNone(`update cab_correcoes set status = '2'
+			where id_empresa = $1 and id = $2 and status = '3'
+			  and not exists (select 1 from acoes_correcoes aco
+			                   where aco.id_empresa = $1 and aco.id_cab_correcoes = $2 and aco.status = '1')
+			returning id `, [id_empresa, id]);
+};
+
+/* quantas ações da correção ainda estão pendentes (status '1', de qualquer tipo) */
+exports.contarAcoesPendentes = async function(id_empresa, id){
+	const r = await db.one(`select count(*)::int4 as total from acoes_correcoes
+			where id_empresa = $1 and id_cab_correcoes = $2 and status = '1' `, [id_empresa, id]);
+	return r.total;
+};
+
+/* ACEITE em lote: passa a correção para 2 (Em Andamento) com o usuário como executor.
+   O UPDATE é condicional (status 1, sem executor e usuário autorizado), então dois executores aceitando a mesma
+   correção ao mesmo tempo não se atropelam: só um recebe a linha de volta; o outro recebe null */
+exports.aceitarCabCorrecao = function(id_empresa, id, id_usuario){
+	const strSql = `update cab_correcoes cab
+			set status = '2', id_exec = $3, user_update = $3
+			from usuarios sol
+			where cab.id_empresa = $1 and cab.id = $2
+			  and cab.status = '1' and coalesce(cab.id_exec,0) = 0
+			  and sol.id_empresa = cab.id_empresa and sol.id = cab.id_sol
+			  and ${sqlPodeAceitar('sol', 'cab', 3)}
+			returning cab.id `;
+	return db.oneOrNone(strSql, [id_empresa, id, id_usuario]);
+};
+
 /* coluna de assinaturas que liga ao documento de cada origem da correção (whitelist: só estas entram no SQL) */
 const COLUNA_ASSINATURA_POR_ORIGEM = {
 	SIM: 'id_sim',

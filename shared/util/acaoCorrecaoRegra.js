@@ -12,6 +12,17 @@ async function validaSituacaoCorrecao(operacao, id_empresa, id_cab_correcoes) {
 	if (cab.status != '2' && cab.status != '3') {
 		throw new erroDB.UserException('Regra de negócio', [{ tabela: 'ACAO_CORRECAO', message: `"${operacao}" Só Permitida Com A Correção Em Andamento Ou Aceita (Aguardando Ação).!` }]);
 	}
+	return cab;
+}
+
+/* o executor da ação não é escolhido: Upload De Arquivos ('1') = executor da correção;
+   Exclusão De Arquivos ('2') = solicitante da correção */
+function aplicaExecutor(acao, cab) {
+	if (String(acao.flag_acao) === '1') {
+		acao.id_exec = cab.id_exec;
+	} else if (String(acao.flag_acao) === '2') {
+		acao.id_exec = cab.id_sol;
+	}
 }
 
 
@@ -21,7 +32,8 @@ exports.acaoCorrecao_Inclusao = async function(acao) {
 		if (obj != null) {
 		   throw new erroDB.UserException('Regra de negócio', [{ tabela: 'ACAO_CORRECAO', message: `"INCLUSÃO" Registro Já Existe Na Base De Dados.!` }]);
 		}
-		await validaSituacaoCorrecao('INCLUSÃO', acao.id_empresa, acao.id_cab_correcoes);
+		const cab = await validaSituacaoCorrecao('INCLUSÃO', acao.id_empresa, acao.id_cab_correcoes);
+		aplicaExecutor(acao, cab);
 	} catch (err) {
 		throw err;
 	}
@@ -36,7 +48,8 @@ exports.acaoCorrecao_Alteracao = async function(acao) {
 		if (obj == null) {
 		   throw new erroDB.UserException('Regra de negócio', [{ tabela: 'ACAO_CORRECAO', message: `"ALTERAÇÃO" Registro Não Existe Na Base De Dados.!` }]);
 		}
-		await validaSituacaoCorrecao('ALTERAÇÃO', obj.id_empresa, obj.id_cab_correcoes);
+		const cab = await validaSituacaoCorrecao('ALTERAÇÃO', obj.id_empresa, obj.id_cab_correcoes);
+		aplicaExecutor(acao, cab);
 	} catch (err) {
 		throw err;
 	}
