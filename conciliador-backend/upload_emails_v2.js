@@ -1,6 +1,7 @@
 const { Command } = require("commander");
 const { login } = require("../shared/service/authService");
 const emailService = require("../shared/service/emailService");
+const simUploadSrv = require("../shared/service/sim_uploadService");
 const fs = require("fs");
 const path = require("path");
 
@@ -33,8 +34,8 @@ const DRIVE_LOCAL = "Y:\\";
 // Somente PDF e imagens serão copiados
 const EXTENSOES_PERMITIDAS = [".pdf", ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tif", ".tiff", ".webp"];
 
-// status_arquivos: 0 = pendente, 1 = copiado para o repositório, 3 = ignorado (não é PDF/imagem)
-const STATUS_COPIADO = "1";
+// status_arquivos de psts_anexos: este script só grava o 3 (ignorado: não é PDF/imagem).
+// Os demais (0, 1, 2) quem atualiza é a trigger de docs_gdrives.
 const STATUS_IGNORADO = "3";
 
 function extensaoPermitida(nomeArquivo) {
@@ -73,6 +74,53 @@ async function copiarArquivo(origem, destino) {
     await fs.promises.rename(tmp, destino);
 }
 
+// docs_gdrives: o anexo de e-mail entra com origem EMAIL e id_origem = id do anexo.
+// id_folder vem da tabela pastas (id 3, sigla EMAILS); id_file fica vazio (NOT NULL) e é completado depois,
+// no upload para o Drive.
+const ORIGEM_DOC = "EMAIL";
+const PASTA_DRIVE_ID = 3;
+const PASTA_DRIVE_SIGLA = "EMAILS";
+let idPastaDrive = "";
+const STATUS_UPLOAD_PENDENTE = "0";
+
+// Garante o registro em docs_gdrives sem duplicar (o script pode rodar de novo sobre o mesmo anexo)
+async function registrarDocGdrive(item) {
+    let existentes = [];
+    try {
+        existentes = await simUploadSrv.getDocGDrive({
+            id_empresa: ID_EMPRESA,
+            origem: ORIGEM_DOC,
+            id_origem: item.id,
+            pagina: 0,
+            tamPagina: 10,
+        });
+    } catch (error) {
+        // 409 = nenhum registro para esta consulta
+        if (error.response?.status !== 409) throw error;
+    }
+
+    if (existentes.length > 0) {
+        console.log("ℹ️ Já registrado em docs_gdrives:", existentes[0].id);
+        return existentes[0];
+    }
+
+    const usuario = Number(opts.id_usuario);
+    const doc = await emailService.insertDocGDrive({
+        id_empresa: ID_EMPRESA,
+        id_folder: idPastaDrive,
+        id_file: "",
+        file_name: montarNomeDestino(item),
+        id_origem: item.id,
+        origem: ORIGEM_DOC,
+        file_name_original: item.nome_original_anexo || item.nome_anexo_salvo,
+        status_upload: STATUS_UPLOAD_PENDENTE,
+        user_insert: usuario,
+        user_update: usuario,
+    });
+    console.log("🗂 Registrado em docs_gdrives:", doc.id);
+    return doc;
+}
+
 async function atualizarStatus(item, status) {
     item.status_arquivos = status;
     try {
@@ -90,6 +138,11 @@ async function iniciar() {
 
         await fs.promises.mkdir(opts.destino, { recursive: true });
 
+        // sem a pasta não há como registrar em docs_gdrives: para antes de copiar qualquer arquivo
+        idPastaDrive = await emailService.getIdPastaDrive(ID_EMPRESA, PASTA_DRIVE_ID, PASTA_DRIVE_SIGLA);
+        if (!idPastaDrive) throw new Error(`Pasta ${PASTA_DRIVE_SIGLA} (id ${PASTA_DRIVE_ID}) sem id do Drive em pastas`);
+        console.log("pasta do Drive (EMAILS): ", idPastaDrive);
+
         // pagina: 0 faz a API ignorar a paginação (usar o intervalo de ids);
         // para testes, informe pagina 1, 2, 3... para trazer só uma página
         const emails = await emailService.getPsts_Anexos({
@@ -100,23 +153,12 @@ async function iniciar() {
             acordo: "",
             status_arquivos: "0",
             pagina: 1,
-            tamPagina: 2000,
+            tamPagina: 5,
         });
 
         console.log("total de anexos pendentes: ", emails.length);
         console.log("destino: ", opts.destino);
-        console.log(emails);
         console.log("início do processamento...");
-
-        // somente para conferir a regra de caminhos (não copia nada)
-        for (const item of emails) {
-            if (!item.pasta_acordo || !item.nome_anexo_salvo) {
-                console.log(`⚠️ Anexo ${item.id} sem pasta_acordo/nome_anexo_salvo`);
-                continue;
-            }
-            console.log(`copiando de: ${montarCaminhoAnexo(item)}`);
-            console.log(`       para: ${path.join(opts.destino, montarNomeDestino(item))}`);
-        }
 
         let copiados = 0, jaExistiam = 0, ignorados = 0, naoEncontrados = 0, erros = 0;
         
@@ -160,7 +202,9 @@ async function iniciar() {
                     copiados++;
                 }
 
-                await atualizarStatus(item, STATUS_COPIADO);
+                // o status de psts_anexos é atualizado pela trigger de docs_gdrives (0 sem docs, 2 com upload
+                // pendente, 1 tudo enviado); se o registro falhar o anexo continua 0 e é tentado de novo
+                await registrarDocGdrive(item);
             } catch (error) {
                 console.log("❌ Erro ao copiar", item.nome_anexo_salvo, ":", error.message);
                 erros++;

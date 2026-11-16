@@ -88,6 +88,7 @@ app.use(
 
 app.use("/api/google_drive", require("./route/google_driveRoute.js"));
 app.use("/api/doc_gdrive", require("./route/doc_gdriveRoute.js"));
+app.use("/api/pasta", require("./route/pastaRoute.js"));
 app.use("/api/paf_det", require("./route/paf_detRoute.js"));
 app.use("/api/paf_cab", require("./route/paf_cabRoute.js"));
 app.use("/api/pst_anexo", require("./route/pst_anexoRoute.js"));

@@ -56,6 +56,22 @@ const updatePsts_Anexos = async function(anexo) {
 };
 
 
+/* id da pasta do Google Drive (coluna pasta), cadastrada em pastas por id e sigla */
+const getIdPastaDrive = async function(id_empresa, id, sigla) {
+    const response = await api.get(`/pasta/${id_empresa}/${id}/${encodeURIComponent(sigla)}`);
+    return response.data.pasta;
+};
+
+/* inclui o registro em docs_gdrives; id: 0 é necessário porque a regra de inclusão consulta o registro pelo id */
+const insertDocGDrive = async function(doc) {
+    try {
+        const response = await api.post("/doc_gdrive", { id: 0, ...doc });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
 async function uploadArquivoEmail(caminhoArquivo, id_pst_anexo) {
     try {
         const form = new FormData();
@@ -79,5 +95,7 @@ async function uploadArquivoEmail(caminhoArquivo, id_pst_anexo) {
 module.exports = {
     getPsts_Anexos,
     uploadArquivoEmail,
-    updatePsts_Anexos
+    updatePsts_Anexos,
+    insertDocGDrive,
+    getIdPastaDrive
 };
