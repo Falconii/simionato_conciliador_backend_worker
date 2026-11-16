@@ -25,9 +25,10 @@ const opts = program.opts();
 
 const ID_EMPRESA = 1;
 
-// Prefixo gravado no banco x caminho equivalente nesta máquina
-const PREFIXO_BANCO = "E:\\SISTEMAS\\O Conciliador - GP\\SUP\\";
-const PREFIXO_LOCAL = "Y:\\";
+// No banco o caminho vem como E:\SISTEMAS\O Conciliador - GP\SUP\ANEXOS EMAILS - ACORDOS\...
+// Nesta máquina só vale o drive Y:, cujo conteúdo começa em ANEXOS EMAILS - ACORDOS
+const PASTA_RAIZ = "ANEXOS EMAILS - ACORDOS";
+const DRIVE_LOCAL = "Y:\\";
 
 // Somente PDF e imagens serão copiados
 const EXTENSOES_PERMITIDAS = [".pdf", ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tif", ".tiff", ".webp"];
@@ -41,8 +42,10 @@ function extensaoPermitida(nomeArquivo) {
 }
 
 function montarCaminhoAnexo(item) {
-    const pasta = item.pasta_acordo.startsWith(PREFIXO_BANCO)
-        ? PREFIXO_LOCAL + item.pasta_acordo.substring(PREFIXO_BANCO.length)
+    // descarta tudo antes de "ANEXOS EMAILS - ACORDOS" (ignora maiúsculas/minúsculas)
+    const posicao = item.pasta_acordo.toUpperCase().indexOf(PASTA_RAIZ);
+    const pasta = posicao >= 0
+        ? DRIVE_LOCAL + item.pasta_acordo.substring(posicao)
         : item.pasta_acordo;
 
     return path.join(pasta, item.nome_anexo_salvo);
@@ -96,11 +99,24 @@ async function iniciar() {
             id_final: opts.id_final,
             acordo: "",
             status_arquivos: "0",
-            pagina: 0,
+            pagina: 1,
             tamPagina: 2000,
         });
 
         console.log("total de anexos pendentes: ", emails.length);
+        console.log("destino: ", opts.destino);
+        console.log(emails);
+        console.log("início do processamento...");
+
+        // somente para conferir a regra de caminhos (não copia nada)
+        for (const item of emails) {
+            if (!item.pasta_acordo || !item.nome_anexo_salvo) {
+                console.log(`⚠️ Anexo ${item.id} sem pasta_acordo/nome_anexo_salvo`);
+                continue;
+            }
+            console.log(`copiando de: ${montarCaminhoAnexo(item)}`);
+            console.log(`       para: ${path.join(opts.destino, montarNomeDestino(item))}`);
+        }
 
         let copiados = 0, jaExistiam = 0, ignorados = 0, naoEncontrados = 0, erros = 0;
         

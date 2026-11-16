@@ -49,6 +49,16 @@ function condicaoIgual(coluna, valor, condicoes, valores) {
 	condicoes.push(`${coluna} = $${valores.length}`);
 }
 
+/* O front manda a data como 'dd/MM/yyyy HH:mm:ss'. O Postgres interpreta esse texto conforme o DateStyle do servidor:
+   no Railway (MDY) '16/11/2026' dá erro e '05/11/2026' vira 11 de maio. Por isso vai como ISO ('yyyy-MM-dd HH:mm:ss'),
+   que vale em qualquer configuração. Valor que não está no formato dd/MM/yyyy segue como veio. */
+function dataParaIso(valor) {
+	const m = /^(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}:\d{2}(?::\d{2})?))?$/.exec(String(valor ?? '').trim());
+	if (!m) return valor;
+	return `${m[3]}-${m[2]}-${m[1]}` + (m[4] ? ` ${m[4]}` : '');
+}
+exports.dataParaIso = dataParaIso;
+
 /* GET CAMPOS */
 exports.getCampos = function(DetCorrecao){
 return [
@@ -138,7 +148,7 @@ exports.insertDetCorrecao = function(det){
 		det.id_empresa,
 		det.id_cab,
 		det.mensagem,
-		det.data,
+		dataParaIso(det.data),
 		det.id_auditor,
 		det.status,
 		det.user_insert,
@@ -159,7 +169,7 @@ exports.updateDetCorrecao = function(det){
 	const valores = [
 		det.id_cab,
 		det.mensagem,
-		det.data,
+		dataParaIso(det.data),
 		det.id_auditor,
 		det.status,
 		det.user_update,
