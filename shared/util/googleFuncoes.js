@@ -233,6 +233,16 @@ exports.existFileByName = async function(driveService, fileName, folderId) {
     }
 };
 
+/* id do arquivo (ou null) pelo nome dentro da pasta; usado quando o upload acusa que o arquivo já existe */
+exports.getFileIdByName = async function(driveService, fileName, folderId) {
+    const safeName = fileName.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+    const res = await driveService.files.list({
+        q: `'${folderId}' in parents and name='${safeName}' and trashed=false`,
+        fields: "files(id, name)",
+    });
+    return res.data.files.length > 0 ? res.data.files[0].id : null;
+};
+
 exports.renameFile = async function(driveService, fileId, newName) {
     const body = {
         name: newName,

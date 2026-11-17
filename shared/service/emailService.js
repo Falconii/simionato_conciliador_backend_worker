@@ -56,22 +56,6 @@ const updatePsts_Anexos = async function(anexo) {
 };
 
 
-/* id da pasta do Google Drive (coluna pasta), cadastrada em pastas por id e sigla */
-const getIdPastaDrive = async function(id_empresa, id, sigla) {
-    const response = await api.get(`/pasta/${id_empresa}/${id}/${encodeURIComponent(sigla)}`);
-    return response.data.pasta;
-};
-
-/* inclui o registro em docs_gdrives; id: 0 é necessário porque a regra de inclusão consulta o registro pelo id */
-const insertDocGDrive = async function(doc) {
-    try {
-        const response = await api.post("/doc_gdrive", { id: 0, ...doc });
-        return response.data;
-    } catch (error) {
-        throw error;
-    }
-};
-
 async function uploadArquivoEmail(caminhoArquivo, id_pst_anexo) {
     try {
         const form = new FormData();
@@ -83,11 +67,37 @@ async function uploadArquivoEmail(caminhoArquivo, id_pst_anexo) {
             headers: form.getHeaders(),
             maxContentLength: Infinity,
             maxBodyLength: Infinity,
+            // o padrão do api é 30s; anexos grandes (10 MB+) levam mais para subir e ir ao Drive
+            timeout: 300000,
         });
 
         return response.data;
     } catch (error) {
-        console.error("Erro ao enviar arquivo:", error);
+        console.error("Erro ao enviar arquivo:", error.response?.data?.message || error.message);
+        throw error;
+    }
+}
+
+/* Envia o anexo para o Drive pela rota nova /importacaoemail/anexo. O arquivo deve ter o nome único do Drive
+   (<empresa>_<id>_<nome>); nomeOriginal é o nome do anexo, gravado em file_name_original */
+async function uploadAnexoEmail(caminhoArquivo, id_pst_anexo, nomeOriginal) {
+    try {
+        const form = new FormData();
+
+        form.append("file", fs.createReadStream(caminhoArquivo));
+        form.append("id_pst_anexo", id_pst_anexo);
+        form.append("nome_original", nomeOriginal);
+
+        const response = await api.post("/importacaoemail/anexo", form, {
+            headers: form.getHeaders(),
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
+            // o padrão do api é 30s; anexos grandes (10 MB+) levam mais para subir e ir ao Drive
+            timeout: 300000,
+        });
+
+        return response.data;
+    } catch (error) {
         throw error;
     }
 }
@@ -95,7 +105,6 @@ async function uploadArquivoEmail(caminhoArquivo, id_pst_anexo) {
 module.exports = {
     getPsts_Anexos,
     uploadArquivoEmail,
-    updatePsts_Anexos,
-    insertDocGDrive,
-    getIdPastaDrive
+    uploadAnexoEmail,
+    updatePsts_Anexos
 };

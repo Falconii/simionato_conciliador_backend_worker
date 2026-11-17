@@ -1,0 +1,7 @@
+REM Uma linha por instancia (cada uma em sua janela). Faixas calculadas no Railway.
+REM Troque <SENHA_xxx> pela senha de cada usuario.
+
+node upload_emails_v2.js --id_usuario 996 --senha <SENHA_996> --id_inicial 139107 --id_final 221697
+node upload_emails_v2.js --id_usuario 997 --senha <SENHA_997> --id_inicial 221698 --id_final 304280
+node upload_emails_v2.js --id_usuario 998 --senha <SENHA_998> --id_inicial 304281 --id_final 386862
+node upload_emails_v2.js --id_usuario 999 --senha <SENHA_999> --id_inicial 386863 --id_final 469444
