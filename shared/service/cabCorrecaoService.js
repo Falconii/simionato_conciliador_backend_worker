@@ -136,8 +136,8 @@ async function motivoNaoEncerra(id_empresa, id) {
 	if (cab.status == '9') {
 		return { codigo: 400, mensagem: 'Esta Correção Já Está Encerrada' };
 	}
-	if (cab.status != '2' && cab.status != '3') {
-		return { codigo: 400, mensagem: 'Só É Possível Encerrar Correção Em Andamento Ou Aceita, Aguardando Ação!' };
+	if (cab.status != '2' && cab.status != '3' && cab.status != '4') {
+		return { codigo: 400, mensagem: 'Só É Possível Encerrar Correção Em Andamento, Aceita (Aguardando Ação) Ou Aguardando Verificação!' };
 	}
 
 	const pendencias = [];

@@ -13,6 +13,20 @@ exports.getDoc_Gdrive = async function(id_empresa,id){
 exports.getDocs_Gdrives = async function(params){
 	return doc_gdriveData.getDocs_Gdrives(params);
 };
+/* EXCLUSÃO LÓGICA: marca ou restaura o arquivo. Só o executor de uma ação de Exclusão De Arquivos pendente da
+   correção do SIM dono do arquivo pode. Devolve { ok, codigo, mensagem, doc } */
+exports.marcarDeletado = async function(id_empresa, id, deletado, id_usuario){
+	const doc = await doc_gdriveData.getDoc_Gdrive(id_empresa, id);
+	if (!doc) {
+		return { ok: false, codigo: 404, mensagem: 'Documento Não Encontrado' };
+	}
+	const pode = await doc_gdriveData.podeExcluirDoc(id_empresa, id, id_usuario);
+	if (!pode) {
+		return { ok: false, codigo: 403, mensagem: 'Somente O Executor De Uma Ação De Exclusão De Arquivos Pendente Pode Excluir Ou Restaurar O Arquivo' };
+	}
+	const atualizado = await doc_gdriveData.marcarDeletado(id_empresa, id, !!deletado, id_usuario);
+	return { ok: true, codigo: 200, mensagem: deletado ? 'Arquivo Excluído!' : 'Arquivo Restaurado!', doc: atualizado };
+};
 //* CRUD - INSERT - SERVICE */
  exports.insertDoc_Gdrive = async function(doc_gdrive){
 try 

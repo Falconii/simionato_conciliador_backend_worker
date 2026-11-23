@@ -202,6 +202,14 @@ exports.updateAcaoCorrecao = function(acao){
 	];
 	return db.oneOrNone(strSql, valores);
 };
+/* Conclui a ação pendente (status '1' -> '2'): final = agora (hora do banco), vincula o documento enviado.
+   O "and status = '1'" evita concluir duas vezes; sem linha afetada devolve null */
+exports.executarAcaoCorrecao = function(id_empresa, id, id_docs_gdrives, id_usuario){
+	const strSql = `update acoes_correcoes
+			 set status = '2', final = now(), id_docs_gdrives = $3, user_update = $4
+			 where id_empresa = $1 and id = $2 and status = '1' returning * `;
+	return db.oneOrNone(strSql, [id_empresa, id, id_docs_gdrives ?? 0, id_usuario]);
+};
 /* CRUD - DELETE */
 exports.deleteAcaoCorrecao = function(id_empresa,id){
 	const strSql = `delete from acoes_correcoes

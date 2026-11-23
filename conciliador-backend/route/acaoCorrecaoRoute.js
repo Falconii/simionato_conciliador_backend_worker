@@ -11,6 +11,12 @@ function avisaNovaAcao(acao, registro) {
 		.then((envio) => console.log('E-mail ação da correção:', envio.message))
 		.catch((err) => console.error('Erro no e-mail da ação da correção:', err));
 }
+/* correção que passou para Aguardando Verificação: avisa o solicitante por e-mail, sem prender a resposta */
+function avisaVerificacao(acao) {
+	funcoes.PreparaEmailVerificacaoCorrecao(acao.id_empresa, acao.id_cab_correcoes)
+		.then((envio) => console.log('E-mail verificação da correção:', envio.message))
+		.catch((err) => console.error('Erro no e-mail de verificação da correção:', err));
+}
 router.use(autenticarToken);
 
 /* a ação só é alterada ou excluída por quem a criou (user_insert). Responde 403 e devolve true quando não é o criador;
@@ -23,6 +29,43 @@ async function naoECriador(req, id_empresa, id, res, verbo) {
 	}
 	return false;
 }
+/* ROTA EXECUTAR: conclui a ação pendente. Só o executor da ação pode (a alteração normal é só de quem criou a ação,
+   por isso o executor não passa por ela). Body: { id, id_docs_gdrives (opcional: documento ligado à ação) } */
+router.post("/executar",async function(req, res) {
+try
+	{
+		const id = Number(req.body.id) || 0;
+		const acao = id > 0 ? await acaoCorrecaoSrv.getAcaoCorrecao(req.id_empresa, id) : null;
+		if (!acao || String(acao.status) !== '1')
+		{
+			return res.status(409).json({ message: 'Ação De Correção Não Está Pendente.' });
+		}
+		if (Number(acao.id_exec) !== Number(req.id_usuario))
+		{
+			return res.status(403).json({ message: `Somente O Executor Da Ação (${acao.exec_nome}) Pode Concluí-la.` });
+		}
+		const r = await acaoCorrecaoSrv.executarAcaoCorrecao(req.id_empresa, id, Number(req.body.id_docs_gdrives) || 0, req.id_usuario);
+		if (!r)
+		{
+			return res.status(409).json({ message: 'Ação De Correção Não Está Pendente.' });
+		}
+		res.status(200).json({ id: r.id, acoes_pendentes: r.acoes_pendentes, status_cab: r.status_cab });
+		if (r.aguardando_verificacao) {
+			avisaVerificacao(r);
+		}
+	}
+catch (err)
+	{
+		if(err.name == 'MyExceptionDB')
+		{
+			res.status(409).json(err);
+		}
+		else
+		{
+			res.status(500).json({ erro: 'BAK-END', tabela: 'acao_correcao', message: err.message });
+		}
+	}
+})
 /* ROTA GETONE acao_correcao */
 router.get("/:id_empresa/:id",async function(req, res) {
 try
@@ -117,6 +160,12 @@ try
 		else
 		{
 			res.status(200).json(registro);
+				/* acao de upload concluida e correcao em Aguardando Verificacao: avisa o solicitante */
+				if (registro.aguardando_verificacao) {
+					funcoes.PreparaEmailVerificacaoCorrecao(registro.id_empresa, registro.id_cab_correcoes)
+						.then((envio) => console.log('E-mail verificacao da correcao:', envio.message))
+						.catch((err) => console.error('Erro no e-mail de verificacao da correcao:', err));
+				}
 		}
 }
 catch (err)

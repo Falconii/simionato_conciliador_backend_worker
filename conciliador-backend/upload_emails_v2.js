@@ -102,7 +102,7 @@ async function buscarAnexos(status) {
             acordo: "",
             status_arquivos: status,
             pagina: 1,
-            tamPagina: 3000,
+            tamPagina: 5,
         });
     } catch (error) {
         if (error.response?.status === 409) return [];
@@ -127,12 +127,10 @@ async function iniciar() {
 
         await fs.promises.mkdir(opts.destino, { recursive: true });
 
-        // 0 = ainda não processado; 2 = falhou numa execução anterior (internet, arquivo corrompido...): tenta de novo
-        const novos = await buscarAnexos("0");
-        const comFalha = await buscarAnexos("2");
-        const emails = [...novos, ...comFalha];
+        // somente status 0 (ainda não processado). Os com falha (status 2) ficam de fora e são tratados à parte
+        const emails = await buscarAnexos("0");
 
-        console.log("anexos novos: ", novos.length, "| para tentar de novo (status 2): ", comFalha.length);
+        console.log("anexos novos: ", emails.length);
         console.log("destino: ", opts.destino);
         console.log("início do processamento...");
 
@@ -173,10 +171,8 @@ async function iniciar() {
                 if (await existe(destino)) {
                     console.log("⚠️ Arquivo já existe no repositório:", destino);
                     jaExistiam++;
-                    // anexo novo não deveria ter cópia: pausa para conferir. Com upload pendente a cópia é esperada
-                    if (item.status_arquivos === "0") {
-                        await aguardarEnter("\nArquivo já existe. Tecle ENTER para continuar... ");
-                    }
+                    // anexo novo não deveria ter cópia: pausa para conferir
+                    await aguardarEnter("\nArquivo já existe. Tecle ENTER para continuar... ");
                 } else {
                     await copiarArquivo(origem, destino);
                     console.log("✅ Arquivo copiado:", destino);

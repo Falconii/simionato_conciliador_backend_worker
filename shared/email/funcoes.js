@@ -1180,3 +1180,65 @@ exports.PreparaEmailAcaoCorrecao = async function (acao) {
     return { message: "Falha Ao Enviar E-Mail!" };
   }
 };
+
+/* avisa o solicitante que a correção passou para Aguardando Verificação (4): o executor concluiu o upload dos
+   arquivos e agora cabe ao solicitante conferir se resolveram, para encerrar ou reabrir a correção */
+exports.PreparaEmailVerificacaoCorrecao = async function (id_empresa, id_cab) {
+  const cab = await cabCorrecaoSrv.getCabCorrecao(id_empresa, id_cab);
+
+  if (!cab) {
+    return { message: "Falha: Correção Não Encontrada!" };
+  }
+  if (String(cab.status) !== "4") {
+    return { message: "E-Mail Não Enviado: Correção Não Está Aguardando Verificação." };
+  }
+
+  const destinatario = (cab.sol_email || "").trim();
+  if (!destinatario) {
+    return { message: "Falha: Destinatário Sem E-Mail Cadastrado!" };
+  }
+
+  const detalhes = await detCorrecaoSrv.getDetCorrecoes({
+    id_empresa,
+    id_cab,
+    orderby: "000002",
+  });
+
+  const acoes = await acaoCorrecaoSrv.getAcoesCorrecoes({
+    id_empresa,
+    id_cab_correcoes: id_cab,
+    orderby: "000002",
+  });
+
+  let sim = null;
+  if (String(cab.origem).toUpperCase() === "SIM" && cab.id_origem) {
+    sim = await simHistoricoSrv.getSim_Historico(cab.id_empresa ?? id_empresa, cab.id_origem);
+  }
+
+  const destaque = `<div style="border:1px solid #ddd; border-left:4px solid #2e7d32; background:#ffffff;
+                padding:10px 14px; margin:0 0 16px 0; font-size:14px; color:#333333;">
+      <strong>${escapaHtml(cab.exec_nome || "O executor")} concluiu o envio dos arquivos</strong><br>
+      <span>Confira se os arquivos resolveram a correção: se sim, encerre; se não, responda ou inclua uma nova ação para reabri-la.</span>
+    </div>`;
+
+  const html = htmlCorrecao(cab, detalhes, sim, {
+    titulo: "Correção Aguardando Verificação",
+    intro: `A correção ${cab.id} está aguardando a sua verificação. Segue o resumo:`,
+    destaque,
+    botaoTexto: "ACESSAR O SISTEMA",
+    url: urlSistema(),
+    acoes,
+  });
+
+  try {
+    await enviar({
+      to: destinatario,
+      subject: `Correção Aguardando Verificação - ${cab.id}`,
+      html,
+    });
+    return { message: "E-Mail Enviado Com Sucesso!" };
+  } catch (erro) {
+    console.error("Erro ao enviar email de verificação da correção:", erro);
+    return { message: "Falha Ao Enviar E-Mail!" };
+  }
+};

@@ -116,7 +116,6 @@ exports.getSim_Historico = function(id_empresa,id){
 			,  sim.user_update as  user_update 
             ,  coalesce(ass.resposta,'')    as ass_resposta
             ,  coalesce(ass.obs,'')            as ass_obs
-			,  coalesce(ass.upload_cliente,'')      as ass_upload_cliente 
 			,  coalesce(cab.id,0) as corr_id
 			,  coalesce(cab.tarefa,'') as corr_tarefa
 			,  coalesce(cab.id_sol,0) as corr_id_sol
@@ -124,7 +123,9 @@ exports.getSim_Historico = function(id_empresa,id){
             ,  coalesce(cab.status,'') as corr_status
             ,  coalesce(cab.status_assinatura_cliente,'') as corr_status_assinatura_cliente
             ,  coalesce(cab.status_assinatura_gp,'') as corr_status_assinatura_gp
- 			FROM sim_historicos sim 	     
+			,  (select count(*) from acoes_correcoes aco where aco.id_empresa = cab.id_empresa and aco.id_cab_correcoes = cab.id and aco.flag_acao = '1' and aco.status = '1')::int4 as acoes_upload_pendentes
+			,  (select count(*) from acoes_correcoes aco where aco.id_empresa = cab.id_empresa and aco.id_cab_correcoes = cab.id and aco.flag_acao = '2' and aco.status = '1')::int4 as acoes_exclusao_pendentes
+ 			FROM sim_historicos sim
 			left join cab_correcoes cab on cab.id_empresa = sim.id_empresa and cab.origem = 'SIM' and cab.id_origem = sim.id
 			left join assinaturas ass on ass.id_empresa = sim.id_empresa and ass.id_sim = sim.id
 
@@ -150,7 +151,6 @@ function normalizaParametrosSimHistorico(p){
 
 	n.cod_cli_sim = texto(p.cod_cli_sim);
 	n.status_arquivos = texto(p.status_arquivos);
-	n.upload_cliente = texto(p.upload_cliente);
 	n.descrpasso = texto(p.descrpasso);
 	n.modoas = texto(p.modoas);
 	n.acordo = texto(p.acordo);
@@ -262,12 +262,6 @@ if (params) {
 						if (where != "") where += " and ";
 						where +=  `sim.possuipagtoliberado > 0 `;
 					}
-				}
-
-				/* SIM sem linha em assinaturas não teve upload do cliente: vale como '0' */
-				if (params.upload_cliente !== '') {
-					if (where != "") where += " and ";
-					where += `coalesce(trim(ass.upload_cliente),'0')  = '${params.upload_cliente}' `;
 				}
 
 				/* número do acordo do SIM (sim_acordos); antes o filtro era enviado mas ignorado */
@@ -394,7 +388,6 @@ if (params) {
 			,  sim.user_update as  user_update
             ,  coalesce(ass.resposta,'')    as ass_resposta
             ,  coalesce(ass.obs,'')            as ass_obs
-			,  coalesce(ass.upload_cliente,'')      as ass_upload_cliente
 			,  coalesce(cab.id,0) as corr_id
 			,  coalesce(cab.tarefa,'') as corr_tarefa
 			,  coalesce(cab.id_sol,0) as corr_id_sol
@@ -402,7 +395,9 @@ if (params) {
             ,  coalesce(cab.status,'') as corr_status
             ,  coalesce(cab.status_assinatura_cliente,'') as corr_status_assinatura_cliente
             ,  coalesce(cab.status_assinatura_gp,'') as corr_status_assinatura_gp
-			FROM sim_historicos sim 
+			,  (select count(*) from acoes_correcoes aco where aco.id_empresa = cab.id_empresa and aco.id_cab_correcoes = cab.id and aco.flag_acao = '1' and aco.status = '1')::int4 as acoes_upload_pendentes
+			,  (select count(*) from acoes_correcoes aco where aco.id_empresa = cab.id_empresa and aco.id_cab_correcoes = cab.id and aco.flag_acao = '2' and aco.status = '1')::int4 as acoes_exclusao_pendentes
+			FROM sim_historicos sim
 			left join cab_correcoes cab on cab.id_empresa = sim.id_empresa and cab.origem = 'SIM' and cab.id_origem = sim.id   
             left join assinaturas ass on ass.id_empresa = sim.id_empresa and ass.id_sim = sim.id
 			${where} 			${ orderby} ${ paginacao} `;

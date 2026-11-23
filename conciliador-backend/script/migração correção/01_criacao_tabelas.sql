@@ -13,7 +13,8 @@ BEGIN;
 /* ---------------------------------------------------------------
    1. cab_correcoes - cabeçalho da correção (uma por documento do SIM)
       status: 0 Não Enviado, 1 Aguardando Executor, 2 Em Andamento,
-              3 Correção Aceita - Aguardando Ação, 9 Encerrada
+              3 Correção Aceita - Aguardando Ação, 4 Aguardando Verificação (upload feito, o solicitante
+              confere), 9 Encerrada
       id_aguardando_resposta: usuário oposto ao autor da última mensagem (mantido pelo sistema)
    --------------------------------------------------------------- */
 CREATE TABLE IF NOT EXISTS public.cab_correcoes (

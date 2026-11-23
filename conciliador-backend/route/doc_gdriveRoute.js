@@ -111,6 +111,23 @@ catch (err)
 		}
 	}
 })
+/* ROTA EXCLUSÃO LÓGICA: { id_empresa, id, deletado } - exclui (true) ou restaura (false) o arquivo */
+router.put("/deletado",async function(req, res) {
+try
+	{
+		const { id, deletado } = req.body;
+		const r = await doc_gdriveSrv.marcarDeletado(req.id_empresa, id, deletado === true, req.id_usuario);
+		if (!r.ok) {
+			res.status(r.codigo).json({ message: r.mensagem });
+		} else {
+			res.status(200).json({ message: r.mensagem, ...r.doc });
+		}
+	}
+catch (err)
+	{
+		res.status(500).json({ erro: 'BAK-END', tabela: 'Doc_Gdrive', message: err.message });
+	}
+})
 /* ROTA DELETE doc_gdrive */
 router.delete("/:id_empresa/:id",async function(req, res) {
 try 

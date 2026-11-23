@@ -3,14 +3,14 @@ const cabCorrecaoSrv = require('../service/cabCorrecaoService');
 const erroDB = require('../util/userfunctiondb');
 const shared = require('../util/shared');
 /* REGRA DE NEGOCIO acao_correcao */
-/* Ações só têm CRUD com a correção em andamento ('2') ou aceita aguardando ação ('3') */
+/* Ações só têm CRUD com a correção em andamento ('2'), aceita aguardando ação ('3') ou aguardando verificação ('4') */
 async function validaSituacaoCorrecao(operacao, id_empresa, id_cab_correcoes) {
 	const cab = await cabCorrecaoSrv.getCabCorrecao(id_empresa, id_cab_correcoes);
 	if (cab == null) {
 		throw new erroDB.UserException('Regra de negócio', [{ tabela: 'ACAO_CORRECAO', message: `"${operacao}" Correção Não Existe Na Base De Dados.!` }]);
 	}
-	if (cab.status != '2' && cab.status != '3') {
-		throw new erroDB.UserException('Regra de negócio', [{ tabela: 'ACAO_CORRECAO', message: `"${operacao}" Só Permitida Com A Correção Em Andamento Ou Aceita (Aguardando Ação).!` }]);
+	if (cab.status != '2' && cab.status != '3' && cab.status != '4') {
+		throw new erroDB.UserException('Regra de negócio', [{ tabela: 'ACAO_CORRECAO', message: `"${operacao}" Só Permitida Com A Correção Em Andamento, Aceita (Aguardando Ação) Ou Aguardando Verificação.!` }]);
 	}
 	return cab;
 }

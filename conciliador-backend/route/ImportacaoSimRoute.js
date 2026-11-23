@@ -7,6 +7,8 @@ const uploadArquivoSim = require("../../shared/uploadConfig/uploadArquivoSim.js"
 const dbController = require("../../shared/controllers/doccontroller");
 const doc_gdriveSrv = require("../../shared/service/doc_gdriveService.js");
 const simHistoSrv = require("../../shared/service/sim_historicoService.js");
+const acaoCorrecaoSrv = require("../../shared/service/acaoCorrecaoService.js");
+const funcoes = require("../../shared/email/funcoes.js");
 const express = require("express");
 const router = express.Router();
 const shared = require("../../shared/util/shared.js");
@@ -92,6 +94,33 @@ router.post(
       const id_usuario = req.id_usuario;
       const id_histo = req.body.id_histo;
 
+      /* id_acao (opcional): ação de Upload De Arquivos pendente da correção deste SIM. Só o executor da ação
+         pode fazer o upload; ao final do envio a ação é concluída */
+      const id_acao = Number(req.body.id_acao) || 0;
+      if (id_acao > 0) {
+        const acao = await acaoCorrecaoSrv.getAcaoCorrecao(id_empresa, id_acao);
+        if (
+          !acao ||
+          acao.flag_acao !== "1" ||
+          acao.status !== "1" ||
+          acao.cab_origem !== "SIM" ||
+          Number(acao.cab_id_origem) !== Number(id_histo)
+        ) {
+          return res.status(409).json({
+            message: "Ação De Upload Não Está Pendente Para Este SIM.",
+          });
+        }
+        if (Number(acao.id_exec) !== Number(id_usuario)) {
+          return res.status(403).json({
+            message: `Somente O Executor Da Ação (${acao.exec_nome}) Pode Fazer O Upload.`,
+          });
+        }
+      }
+      let acaoExecutada = false;
+      let acoesPendentes = -1; // ações que restam na correção depois da execução (-1 = sem ação informada)
+      let statusCab = ""; // situação da correção depois da execução
+      let idCabVerificacao = 0; // correção que passou para Aguardando Verificação: o solicitante é avisado por e-mail
+
       let g_doc = "";
 
       for (const file of files) {
@@ -167,6 +196,17 @@ router.post(
             g_doc.id_file = resposta.data.id;
             g_doc.status_upload = "1";
             g_doc = await doc_gdriveSrv.updateDoc_Gdrive(g_doc);
+            if (id_acao > 0 && !acaoExecutada) {
+              const concluida = await acaoCorrecaoSrv.executarAcaoCorrecao(
+                id_empresa, id_acao, g_doc.id, id_usuario,
+              );
+              acaoExecutada = !!concluida;
+              if (concluida) {
+                acoesPendentes = concluida.acoes_pendentes;
+                statusCab = concluida.status_cab;
+                if (concluida.aguardando_verificacao) idCabVerificacao = concluida.id_cab_correcoes;
+              }
+            }
           }
 
           console.log("Retorno do Google", resposta);
@@ -177,7 +217,14 @@ router.post(
           g_doc = await doc_gdriveSrv.updateDoc_Gdrive(g_doc);
         }
       }
-      res.status(200).json({ message: "Fim Do Processamento!", messageGoogle:messageGoogle });
+      res.status(200).json({ message: "Fim Do Processamento!", messageGoogle:messageGoogle, acao_executada: acaoExecutada, acoes_pendentes: acoesPendentes, status_cab: statusCab });
+
+      // sem prender a resposta: erro no envio só vai para o log
+      if (idCabVerificacao > 0) {
+        funcoes.PreparaEmailVerificacaoCorrecao(id_empresa, idCabVerificacao)
+          .then((envio) => console.log("E-mail verificação da correção:", envio.message))
+          .catch((err) => console.error("Erro no e-mail de verificação da correção:", err));
+      }
     } catch (err) {
       console.log(err);
       if (err.name == "MyExceptionDB") {

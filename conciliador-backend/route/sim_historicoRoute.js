@@ -147,7 +147,6 @@ router.post("/sim_historicos",async function(req, res) {
       status_assinatura: 'F',
       obs_assinatura:'SEM FILTRO',
       cond_pagto:'-1',
-      upload_cliente:'',
       id_aguardando_resposta:0,
       flag_acao:'',
       assinatura_correcao:'',

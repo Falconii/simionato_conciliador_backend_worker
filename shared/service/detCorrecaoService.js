@@ -21,7 +21,11 @@ try
 	await regras.detCorrecao_Inclusao(det);
 	validacao.Validacao(TABELA,det, parametros.detCorrecao());
 	const registro = await detCorrecaoData.insertDetCorrecao(det);
-	if (registro) await cabCorrecaoData.atualizaAguardandoResposta(registro.id_empresa, registro.id_cab);
+	if (registro) {
+		/* correção Aguardando Verificação (4): a mensagem do solicitante diz que não resolveu e a reabre (2) */
+		await cabCorrecaoData.reabrirVerificacao(registro.id_empresa, registro.id_cab, registro.id_auditor);
+		await cabCorrecaoData.atualizaAguardandoResposta(registro.id_empresa, registro.id_cab);
+	}
 	return registro;
 }
 catch (err)

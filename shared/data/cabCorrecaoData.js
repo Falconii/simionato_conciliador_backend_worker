@@ -140,7 +140,7 @@ exports.getResumoExecutorSolicitante = function(params){
    pode_aceitar = o usuário está cadastrado em correcoes_emails (condição para aceitar, mesma regra do e-mail) */
 exports.getPendencias = function(id_empresa, id_usuario){
 	const strSql = `select
-				count(*) filter (where cab_correcao.id_aguardando_resposta = $2 and cab_correcao.status in ('2','3'))::int4 as aguardando_resposta
+				count(*) filter (where cab_correcao.id_aguardando_resposta = $2 and cab_correcao.status in ('2','3','4'))::int4 as aguardando_resposta
 			,	count(*) filter (where cab_correcao.status <> '9')::int4 as abertas
 			,	exists (select 1 from correcoes_emails ce where ce.id_empresa = $1 and ce.id_auditor = $2) as pode_aceitar
 			from cab_correcoes cab_correcao
@@ -338,7 +338,7 @@ exports.atualizaAguardandoResposta = function(id_empresa, id_cab){
 	return db.none(strSql, [id_empresa, id_cab]);
 };
 /* CRUD - DELETE */
-/* ENCERRAMENTO: passa a correção para 9 (Encerrada). O UPDATE é condicional (só de 2 ou 3), então duas pessoas
+/* ENCERRAMENTO: passa a correção para 9 (Encerrada). O UPDATE é condicional (só de 2, 3 ou 4), então duas pessoas
    encerrando ao mesmo tempo não se atropelam: só uma recebe a linha de volta. Ninguém mais é aguardado depois do
    encerramento, por isso id_aguardando_resposta volta a 0 */
 exports.encerrarCabCorrecao = function(id_empresa, id, id_usuario){
@@ -346,7 +346,7 @@ exports.encerrarCabCorrecao = function(id_empresa, id, id_usuario){
 	   e não só na checagem do serviço, para valer mesmo se algo mudar entre a checagem e o encerramento */
 	const strSql = `update cab_correcoes cab
 			set status = '9', id_aguardando_resposta = 0, dt_encerramento = now(), user_update = $3
-			where cab.id_empresa = $1 and cab.id = $2 and cab.status in ('2','3')
+			where cab.id_empresa = $1 and cab.id = $2 and cab.status in ('2','3','4')
 			  and coalesce(cab.status_assinatura_cliente,'') <> 'N'
 			  and coalesce(cab.status_assinatura_gp,'') <> 'N'
 			  and not exists (select 1 from acoes_correcoes aco
@@ -368,14 +368,49 @@ exports.encerrarCabCorrecao = function(id_empresa, id, id_usuario){
 	});
 };
 
-/* incluída uma ação, a correção Em Andamento (2) passa para Aceita - Aguardando Ação (3).
-   UPDATE condicional: quem já está em 3 (ou em outra situação) não muda */
+/* compatibilidade: com a correção sem ação pendente, a assinatura do documento de origem fica com resposta 'S' e
+   obs vazia (o mesmo que o encerramento faz). Não encerra a correção */
+exports.liberarAssinaturaOrigem = async function(id_empresa, id, id_usuario){
+	const cab = await db.oneOrNone(`select origem, id_origem from cab_correcoes where id_empresa = $1 and id = $2 `, [id_empresa, id]);
+	if (!cab) return false;
+	const coluna = COLUNA_ASSINATURA_POR_ORIGEM[String(cab.origem ?? '').trim().toUpperCase()];
+	if (!coluna || toInt(cab.id_origem) === 0) return false;
+	await db.none(`update assinaturas set resposta = 'S', obs = '', user_update = coalesce($3, user_update)
+			 where id_empresa = $1 and ${coluna} = $2 `, [id_empresa, cab.id_origem, id_usuario ?? null]);
+	return true;
+};
+
+/* ação pendente na correção: Em Andamento (2) passa para Aceita - Aguardando Ação (3) com qualquer ação pendente;
+   Aguardando Verificação (4) volta para 3 (o solicitante reabriu) só com ação de UPLOAD pendente, e quem passa a ser
+   aguardado é o executor. UPDATE condicional: quem já está em 3 (ou em outra situação) não muda */
 exports.marcarAguardandoAcao = function(id_empresa, id){
-	return db.oneOrNone(`update cab_correcoes set status = '3'
-			where id_empresa = $1 and id = $2 and status = '2'
-			  and exists (select 1 from acoes_correcoes aco
-			               where aco.id_empresa = $1 and aco.id_cab_correcoes = $2 and aco.status = '1')
+	return db.oneOrNone(`update cab_correcoes set status = '3',
+			       id_aguardando_resposta = case when status = '4' then coalesce(id_exec, 0) else id_aguardando_resposta end
+			where id_empresa = $1 and id = $2
+			  and ((status = '2' and exists (select 1 from acoes_correcoes aco
+			               where aco.id_empresa = $1 and aco.id_cab_correcoes = $2 and aco.status = '1'))
+			    or (status = '4' and exists (select 1 from acoes_correcoes aco
+			               where aco.id_empresa = $1 and aco.id_cab_correcoes = $2 and aco.status = '1' and aco.flag_acao = '1')))
 			returning id `, [id_empresa, id]);
+};
+
+/* upload concluído e sem outro upload pendente: a correção (2 ou 3) passa para Aguardando Verificação (4) e quem
+   passa a ser aguardado é o solicitante, que confere se os arquivos resolveram. Ação de exclusão pendente não
+   impede: ela é do próprio solicitante */
+exports.marcarAguardandoVerificacao = function(id_empresa, id){
+	return db.oneOrNone(`update cab_correcoes set status = '4', id_aguardando_resposta = coalesce(id_sol, 0)
+			where id_empresa = $1 and id = $2 and status in ('2','3')
+			  and not exists (select 1 from acoes_correcoes aco
+			                   where aco.id_empresa = $1 and aco.id_cab_correcoes = $2 and aco.status = '1' and aco.flag_acao = '1')
+			returning id `, [id_empresa, id]);
+};
+
+/* o solicitante respondeu uma correção Aguardando Verificação (4): não resolveu, volta para Em Andamento (2).
+   Só vale a mensagem do solicitante; a do executor não reabre */
+exports.reabrirVerificacao = function(id_empresa, id, id_autor){
+	return db.oneOrNone(`update cab_correcoes set status = '2'
+			where id_empresa = $1 and id = $2 and status = '4' and id_sol = $3
+			returning id `, [id_empresa, id, id_autor]);
 };
 
 /* sem ação pendente, a correção Aceita - Aguardando Ação (3) volta para Em Andamento (2) */
@@ -387,10 +422,11 @@ exports.voltarParaEmAndamento = function(id_empresa, id){
 			returning id `, [id_empresa, id]);
 };
 
-/* quantas ações da correção ainda estão pendentes (status '1', de qualquer tipo) */
-exports.contarAcoesPendentes = async function(id_empresa, id){
+/* quantas ações da correção ainda estão pendentes (status '1'): de qualquer tipo ou só do tipo flag_acao */
+exports.contarAcoesPendentes = async function(id_empresa, id, flag_acao){
 	const r = await db.one(`select count(*)::int4 as total from acoes_correcoes
-			where id_empresa = $1 and id_cab_correcoes = $2 and status = '1' `, [id_empresa, id]);
+			where id_empresa = $1 and id_cab_correcoes = $2 and status = '1'
+			  and ($3::text is null or flag_acao = $3) `, [id_empresa, id, flag_acao ?? null]);
 	return r.total;
 };
 

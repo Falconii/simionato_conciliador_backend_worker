@@ -30,10 +30,11 @@ exports.getDoc_Gdrive = function(id_empresa, id) {
 			,  doc.id_origem as  id_origem  
 			,  doc.origem as  origem  
 			,  doc.file_name_original as  file_name_original  
-			,  doc.status_upload as  status_upload  
-			,  doc.user_insert as  user_insert  
-			,  doc.user_update as  user_update    
- 			FROM docs_gdrives doc 	     
+			,  doc.status_upload as  status_upload
+			,  doc.deletado as  deletado
+			,  doc.user_insert as  user_insert
+			,  doc.user_update as  user_update
+ 			FROM docs_gdrives doc
 			 where doc.id_empresa = ${id_empresa} and  doc.id = ${id}  `;
     return db.oneOrNone(strSql);
 };
@@ -131,10 +132,11 @@ exports.getDocs_Gdrives = function(params) {
 			,  doc.id_origem as  id_origem  
 			,  doc.origem as  origem  
 			,  doc.file_name_original as  file_name_original  
-			,  doc.status_upload as  status_upload  
-			,  doc.user_insert as  user_insert  
-			,  doc.user_update as  user_update     
-			FROM docs_gdrives doc      
+			,  doc.status_upload as  status_upload
+			,  doc.deletado as  deletado
+			,  doc.user_insert as  user_insert
+			,  doc.user_update as  user_update
+			FROM docs_gdrives doc
 			${where} 			${orderby} ${paginacao} `;
             console.log("consulta DOC", strSql);
             return db.manyOrNone(strSql);
@@ -149,9 +151,10 @@ exports.getDocs_Gdrives = function(params) {
 			,  doc.id_origem as  id_origem  
 			,  doc.origem as  origem  
 			,  doc.file_name_original as  file_name_original  
-			,  doc.status_upload as  status_upload  
-			,  doc.user_insert as  user_insert  
-			,  doc.user_update as  user_update    
+			,  doc.status_upload as  status_upload
+			,  doc.deletado as  deletado
+			,  doc.user_insert as  user_insert
+			,  doc.user_update as  user_update
 			FROM docs_gdrives doc			     `;
         return db.manyOrNone(strSql);
     }
@@ -201,6 +204,22 @@ exports.updateDoc_Gdrive = function(doc_gdrive) {
  		 where id_empresa = ${doc_gdrive.id_empresa} and  id = ${doc_gdrive.id}  returning * `;
     console.log("update doc", strSql);
     return db.oneOrNone(strSql);
+};
+/* EXCLUSÃO LÓGICA: o usuário é executor de uma ação de Exclusão De Arquivos pendente da correção do SIM dono do
+   documento? Só nesse caso ele pode excluir ou restaurar o arquivo */
+exports.podeExcluirDoc = async function(id_empresa, id, id_usuario) {
+    const r = await db.one(`select exists (
+                select 1 from docs_gdrives d
+                  inner join cab_correcoes cab on cab.id_empresa = d.id_empresa and cab.origem = d.origem and cab.id_origem = d.id_origem
+                  inner join acoes_correcoes aco on aco.id_empresa = cab.id_empresa and aco.id_cab_correcoes = cab.id
+                 where d.id_empresa = $1 and d.id = $2 and d.origem = 'SIM'
+                   and cab.status in ('2','3','4')
+                   and aco.flag_acao = '2' and aco.status = '1' and aco.id_exec = $3) as pode`, [id_empresa, id, id_usuario]);
+    return r.pode;
+};
+exports.marcarDeletado = function(id_empresa, id, deletado, id_usuario) {
+    return db.oneOrNone(`update docs_gdrives set deletado = $3, user_update = $4
+             where id_empresa = $1 and id = $2 returning id_empresa, id, deletado `, [id_empresa, id, deletado, id_usuario]);
 };
 /* CRUD - DELETE */
 exports.deleteDoc_Gdrive = function(id_empresa, id) {
