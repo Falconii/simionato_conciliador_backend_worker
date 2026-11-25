@@ -113,6 +113,14 @@ exports.getDocs_Gdrives = function(params) {
             if (where != "") where += " and ";
             where += `doc.id_origem = ${params.id_origem} `;
         }
+        /* e-mails de um PAF: anexo (psts_anexos) -> item (paf_det) -> PAF (id_cab) */
+        if (Number(params.id_cab_paf) > 0) {
+            if (where != "") where += " and ";
+            where += `doc.origem = 'EMAIL' and doc.id_origem in (
+                        select a.id from psts_anexos a
+                         inner join paf_det d on d.id_empresa = a.id_empresa and d.id = a.id_pafs_det
+                         where d.id_cab = ${Number(params.id_cab_paf)}) `;
+        }
         if (where != "") where = " where " + where;
         if (params.pagina != 0) {
             paginacao = `limit ${params.tamPagina} offset((${params.pagina} -1) * ${params.tamPagina})`;

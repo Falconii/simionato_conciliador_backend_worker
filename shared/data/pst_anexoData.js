@@ -154,10 +154,6 @@ exports.getPsts_Anexos = function(params) {
                 where += as.format("pst_anexo.status_assinatura like $1 ", ["%" + params.status_assinatura.trim() + "%"]);
             }
         }
-		if (params.id_inicial !== 0) {
-            if (where != "") where += " and ";
-            where += `pst_anexo.id >= ${params.id_inicial} and pst_anexo.id <= ${params.id_final} `;
-        }
         if (where != "") where = " where " + where;
         if (params.pagina != 0) {
             paginacao = `limit ${params.tamPagina} offset((${params.pagina} -1) * ${params.tamPagina})`;
