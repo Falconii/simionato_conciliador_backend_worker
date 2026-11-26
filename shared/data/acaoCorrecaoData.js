@@ -152,7 +152,7 @@ exports.insertAcaoCorrecao = function(acao){
 			 ,   user_update
 			 )
 			 values(
-			     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+			     $1, $2, $3, $4, to_timestamp($5::text, 'DD/MM/YYYY HH24:MI:SS')::timestamp, to_timestamp($6::text, 'DD/MM/YYYY HH24:MI:SS')::timestamp, $7, $8, $9, $10, $11, $12
 			 )
 	 returning * `;
 	/* id_exec e final aceitam nulo: 0 e vazio viram null */
@@ -178,8 +178,8 @@ exports.updateAcaoCorrecao = function(acao){
 			     id_cab_correcoes = $1
 	 		 ,   id_auditor = $2
 	 		 ,   id_exec = $3
-	 		 ,   inicio = $4
-	 		 ,   final = $5
+	 		 ,   inicio = to_timestamp($4::text, 'DD/MM/YYYY HH24:MI:SS')::timestamp
+	 		 ,   final = to_timestamp($5::text, 'DD/MM/YYYY HH24:MI:SS')::timestamp
 	 		 ,   descricao = $6
 	 		 ,   flag_acao = $7
 	 		 ,   id_docs_gdrives = $8
